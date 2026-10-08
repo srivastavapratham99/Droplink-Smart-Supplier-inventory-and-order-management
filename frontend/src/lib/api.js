@@ -41,6 +41,48 @@ async function fetchAPI(endpoint, options = {}) {
   }
 }
 
+export const authService = {
+  login: (email, password) => {
+    return fetchAPI('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+  },
+  register: (userData) => {
+    return fetchAPI('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+  },
+  getProfile: () => {
+    return fetchAPI('/auth/me');
+  },
+  getDemoAccounts: () => {
+    return fetchAPI('/auth/demo-accounts');
+  },
+};
+
+export const adminService = {
+  getUsers: (role) => {
+    return fetchAPI(`/admin/users${role ? `?role=${role}` : ''}`);
+  },
+  verifySupplier: (id, isVerified, status) => {
+    return fetchAPI(`/admin/users/${id}/verify-supplier`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isVerified, status }),
+    });
+  },
+  updateRole: (id, role) => {
+    return fetchAPI(`/admin/users/${id}/role`, {
+      method: 'PATCH',
+      body: JSON.stringify({ role }),
+    });
+  },
+  getStats: () => {
+    return fetchAPI('/admin/stats');
+  },
+};
+
 export const productService = {
   /** Fetch all products with filter/pagination options */
   getProducts: (params = {}) => {

@@ -21,13 +21,19 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['retailer', 'supplier', 'admin'],
-      default: 'supplier',
+      enum: ['user', 'retailer', 'supplier', 'admin'],
+      default: 'user',
     },
+
+    // Supplier specific details
     companyName: {
       type: String,
       default: '',
       trim: true,
+    },
+    isVerifiedSupplier: {
+      type: Boolean,
+      default: false,
     },
     phone: {
       type: String,
@@ -36,6 +42,33 @@ const userSchema = new mongoose.Schema(
     rating: {
       type: Number,
       default: 5.0,
+    },
+
+    // Retailer / User specific details
+    storeName: {
+      type: String,
+      default: '',
+    },
+    storePlatform: {
+      type: String,
+      enum: ['Shopify', 'WooCommerce', 'Amazon', 'Custom Store', 'None'],
+      default: 'None',
+    },
+    importedProductsCount: {
+      type: Number,
+      default: 0,
+    },
+
+    // Admin specific details
+    adminLevel: {
+      type: String,
+      enum: ['SuperAdmin', 'Operations', 'Support'],
+      default: 'Operations',
+    },
+    status: {
+      type: String,
+      enum: ['active', 'suspended', 'pending_approval'],
+      default: 'active',
     },
   },
   {

@@ -72,101 +72,149 @@ export default function OrdersPage() {
     setTrackingInput('');
   };
 
-  const filteredOrders = filterStatus === 'All' ? orders : orders.filter((o) => o.status === filterStatus);
+  const pendingCount = orders.filter(o => o.status === 'Pending').length;
+  const shippedCount = orders.filter(o => o.status === 'Shipped').length;
+  const deliveredCount = orders.filter(o => o.status === 'Delivered').length;
+  const totalRevenue = orders.reduce((acc, o) => acc + o.totalAmount, 0);
+  const filteredOrders = filterStatus === 'All' ? orders : orders.filter(o => o.status === filterStatus);
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-      {/* Title */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Dropshipping Orders & Fulfillment</h1>
-          <p className="text-xs text-slate-400">Incoming orders synced from connected retailer storefronts</p>
-        </div>
+      {/* Page Header - consistent with all pages */}
+      <div className="page-header-card">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+          <div className="flex-1">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mb-1">
+              Dropshipping Orders &amp; Fulfillment
+            </h1>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Incoming orders synced from connected retailer storefronts
+            </p>
 
-        <div className="flex space-x-2 bg-slate-900 p-1.5 rounded-xl border border-slate-800">
-          {['All', 'Pending', 'Processing', 'Shipped', 'Delivered'].map((st) => (
-            <button
-              key={st}
-              onClick={() => setFilterStatus(st)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                filterStatus === st
-                  ? 'bg-indigo-600 text-white shadow'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
-              }`}
-            >
-              {st}
-            </button>
-          ))}
+            {/* Quick stats row */}
+            <div className="flex flex-wrap gap-4 mt-5">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-extrabold text-white">{orders.length}</span>
+                <span className="text-xs text-slate-400">Total Orders</span>
+              </div>
+              <div className="w-px h-8 bg-slate-800 hidden sm:block"></div>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-extrabold text-amber-400">{pendingCount}</span>
+                <span className="text-xs text-slate-400">Pending</span>
+              </div>
+              <div className="w-px h-8 bg-slate-800 hidden sm:block"></div>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-extrabold text-indigo-400">{shippedCount}</span>
+                <span className="text-xs text-slate-400">In Transit</span>
+              </div>
+              <div className="w-px h-8 bg-slate-800 hidden sm:block"></div>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-extrabold text-emerald-400">₹{totalRevenue.toLocaleString()}</span>
+                <span className="text-xs text-slate-400">Total Revenue</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Status Filter Pills */}
+          <div className="flex flex-wrap gap-2 items-start">
+            {['All', 'Pending', 'Processing', 'Shipped', 'Delivered'].map((st) => (
+              <button
+                key={st}
+                onClick={() => setFilterStatus(st)}
+                className={`filter-pill ${filterStatus === st ? 'active' : 'inactive'}`}
+              >
+                {st}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Orders List */}
       <div className="space-y-4">
         {filteredOrders.length === 0 ? (
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-500 text-xs">
-            No orders found under "{filterStatus}".
+          <div className="content-card p-14 text-center">
+            <div className="text-5xl mb-3">📭</div>
+            <p className="text-slate-300 font-semibold text-sm">No orders found</p>
+            <p className="text-slate-500 text-xs mt-1">No orders under &quot;{filterStatus}&quot; status yet.</p>
           </div>
         ) : (
           filteredOrders.map((order) => {
-            const statusColors = {
-              Pending: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-              Processing: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-              Shipped: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-              Delivered: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+            const statusConfig = {
+              Pending:    { cls: 'badge-warning', dot: 'bg-amber-400' },
+              Processing: { cls: 'badge-blue',    dot: 'bg-blue-400' },
+              Shipped:    { cls: 'badge-info',     dot: 'bg-indigo-400' },
+              Delivered:  { cls: 'badge-success',  dot: 'bg-emerald-400' },
             };
+            const sc = statusConfig[order.status] || statusConfig.Pending;
 
             return (
               <div
                 key={order.id}
-                className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl hover:border-slate-700 transition"
+                className="content-card p-6 hover:border-slate-600 transition-all duration-200"
               >
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4 mb-4">
+                {/* Order Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/60 pb-4 mb-4">
                   <div>
-                    <div className="flex items-center space-x-3">
-                      <span className="font-bold text-white text-base">{order.id}</span>
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${statusColors[order.status]}`}>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="font-extrabold text-white text-base">{order.id}</span>
+                      <span className={`badge ${sc.cls}`}>
+                        <span className={`inline-block h-1.5 w-1.5 rounded-full ${sc.dot}`}></span>
                         {order.status}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Store: <span className="text-indigo-400 font-medium">{order.retailerStore}</span> • Placed: {order.date}
+                    <p className="text-xs text-slate-500 mt-1.5">
+                      Store: <span className="text-indigo-400 font-semibold">{order.retailerStore}</span>
+                      <span className="mx-1.5 text-slate-700">•</span>
+                      Placed: <span className="text-slate-400">{order.date}</span>
                     </p>
                   </div>
 
-                  <div className="flex items-center space-x-3">
-                    <span className="text-sm font-extrabold text-emerald-400">Total: ₹{order.totalAmount}</span>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="text-right">
+                      <span className="text-[10px] text-slate-500 block uppercase tracking-wider">Order Total</span>
+                      <span className="text-lg font-extrabold text-emerald-400">₹{order.totalAmount.toLocaleString()}</span>
+                    </div>
                     {order.status === 'Pending' && (
                       <button
                         onClick={() => setSelectedOrder(order)}
-                        className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-4 py-2 rounded-xl transition shadow"
+                        className="btn-primary"
                       >
-                        Fulfill & Ship Order
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Fulfill &amp; Ship
                       </button>
                     )}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                {/* Order Details */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
                   <div>
-                    <p className="text-[10px] uppercase font-bold text-slate-500 mb-1">Items Ordered</p>
-                    {order.items.map((item, idx) => (
-                      <div key={idx} className="flex justify-between py-1 text-slate-300">
-                        <span>{item.name} × {item.qty}</span>
-                        <span className="font-semibold text-white">₹{item.price * item.qty}</span>
-                      </div>
-                    ))}
+                    <p className="text-[10px] uppercase font-bold text-slate-500 mb-2 tracking-wider">Items Ordered</p>
+                    <div className="space-y-1.5">
+                      {order.items.map((item, idx) => (
+                        <div key={idx} className="flex justify-between py-1.5 px-3 bg-slate-800/40 rounded-lg text-slate-300">
+                          <span>{item.name} <span className="text-slate-500">× {item.qty}</span></span>
+                          <span className="font-semibold text-white">₹{(item.price * item.qty).toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   <div>
-                    <p className="text-[10px] uppercase font-bold text-slate-500 mb-1">Shipping Destination</p>
-                    <p className="text-slate-300 font-medium">{order.customerName}</p>
-                    <p className="text-slate-400">{order.shippingAddress}</p>
-
-                    {order.trackingNumber && (
-                      <div className="mt-2 text-[11px] text-slate-400">
-                        Tracking ID: <span className="font-mono text-indigo-400 font-bold">{order.trackingNumber}</span>
-                      </div>
-                    )}
+                    <p className="text-[10px] uppercase font-bold text-slate-500 mb-2 tracking-wider">Shipping Destination</p>
+                    <div className="bg-slate-800/40 rounded-lg p-3">
+                      <p className="text-slate-200 font-semibold">{order.customerName}</p>
+                      <p className="text-slate-400 text-[11px] mt-0.5 leading-relaxed">{order.shippingAddress}</p>
+                      {order.trackingNumber && (
+                        <div className="mt-2 pt-2 border-t border-slate-700/50">
+                          <span className="text-slate-500 text-[10px]">Tracking: </span>
+                          <span className="font-mono text-indigo-400 font-bold text-[11px]">{order.trackingNumber}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -177,33 +225,49 @@ export default function OrdersPage() {
 
       {/* Fulfillment Modal */}
       {selectedOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <h3 className="text-base font-bold text-white mb-2">Fulfill Order {selectedOrder.id}</h3>
-            <p className="text-xs text-slate-400 mb-4">Enter courier tracking number to notify retailer and customer.</p>
+        <div className="modal-overlay">
+          <div className="modal-box">
+            <div className="flex justify-between items-start mb-5">
+              <div>
+                <h3 className="text-base font-bold text-white">Fulfill Order {selectedOrder.id}</h3>
+                <p className="text-xs text-slate-400 mt-1">Enter tracking number to mark as shipped and notify the retailer.</p>
+              </div>
+              <button
+                onClick={() => setSelectedOrder(null)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition text-lg ml-4"
+              >✕</button>
+            </div>
 
-            <div className="mb-4">
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Courier Tracking Number</label>
+            <div className="bg-slate-800/40 rounded-xl p-4 mb-5 border border-slate-700/40">
+              <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Order Items</p>
+              {selectedOrder.items.map((item, i) => (
+                <p key={i} className="text-xs text-slate-300">{item.name} × {item.qty}</p>
+              ))}
+              <p className="text-xs text-slate-400 mt-2">Ship to: <span className="text-slate-200 font-medium">{selectedOrder.customerName}</span></p>
+            </div>
+
+            <div className="mb-5">
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Courier Tracking Number</label>
               <input
                 type="text"
                 placeholder="e.g. BLUEDART-9921820"
                 value={trackingInput}
                 onChange={(e) => setTrackingInput(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                className="form-input"
               />
             </div>
 
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => setSelectedOrder(null)}
-                className="px-3 py-2 bg-slate-800 text-slate-400 text-xs rounded-xl"
-              >
+            <div className="flex justify-end gap-3 border-t border-slate-800 pt-4">
+              <button onClick={() => setSelectedOrder(null)} className="btn-secondary">
                 Cancel
               </button>
               <button
                 onClick={() => handleUpdateStatus(selectedOrder.id, 'Shipped', trackingInput || 'TRACK-99120')}
-                className="px-4 py-2 bg-indigo-600 text-white font-semibold text-xs rounded-xl shadow-lg shadow-indigo-600/30"
+                className="btn-primary"
               >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                </svg>
                 Mark as Shipped
               </button>
             </div>

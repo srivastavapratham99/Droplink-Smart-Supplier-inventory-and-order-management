@@ -3,6 +3,8 @@ const cors = require('cors');
 require('dotenv').config();
 const connectDB = require('./connection');
 const productRouter = require('./routes/productRouter');
+const authRouter = require('./routes/authRouter');
+const adminRouter = require('./routes/adminRouter');
 
 const app = express();
 
@@ -15,7 +17,9 @@ app.use(express.urlencoded({ extended: true }));
 connectDB();
 
 // Routes
+app.use('/api/auth', authRouter);
 app.use('/api/products', productRouter);
+app.use('/api/admin', adminRouter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

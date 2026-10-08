@@ -156,80 +156,77 @@ export default function InventoryPage() {
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-      {/* Title & Stats */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Supplier Inventory Control</h1>
-          <p className="text-xs text-slate-400">Real-time stock monitoring & product catalog management</p>
+      {/* Page Header - consistent with all pages */}
+      <div className="page-header-card">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mb-1">
+              Supplier Inventory Control
+            </h1>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Real-time stock monitoring &amp; product catalog management across all SKUs
+            </p>
+          </div>
+          <button onClick={() => setIsModalOpen(true)} className="btn-primary shrink-0">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Add New Product
+          </button>
+        </div>
+      </div>
+
+      {/* Stat Cards - consistent style */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-7">
+        <div className="stat-card flex items-center justify-between">
+          <div>
+            <p className="text-xs text-slate-500 mb-1 font-medium uppercase tracking-wider">Total Products</p>
+            <h2 className="text-2xl font-extrabold text-white">{items.length} <span className="text-base font-semibold text-slate-400">SKUs</span></h2>
+            <p className="text-[11px] text-slate-500 mt-1">{totalStockCount.toLocaleString()} total units in stock</p>
+          </div>
+          <div className="icon-box bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 ml-4">📦</div>
         </div>
 
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition shadow-lg shadow-indigo-600/30 flex items-center justify-center w-fit"
-        >
-          <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+        <div className="stat-card flex items-center justify-between">
+          <div>
+            <p className="text-xs text-slate-500 mb-1 font-medium uppercase tracking-wider">Low Stock Alerts</p>
+            <h2 className="text-2xl font-extrabold text-amber-400">{lowStockCount} <span className="text-base font-semibold text-slate-400">Items</span></h2>
+            <p className="text-[11px] text-slate-500 mt-1">Below threshold limit</p>
+          </div>
+          <div className="icon-box bg-amber-500/10 border border-amber-500/20 text-amber-400 ml-4">⚠️</div>
+        </div>
+
+        <div className="stat-card flex items-center justify-between">
+          <div>
+            <p className="text-xs text-slate-500 mb-1 font-medium uppercase tracking-wider">Out of Stock</p>
+            <h2 className="text-2xl font-extrabold text-red-400">{outOfStockCount} <span className="text-base font-semibold text-slate-400">Items</span></h2>
+            <p className="text-[11px] text-slate-500 mt-1">Fulfillment paused</p>
+          </div>
+          <div className="icon-box bg-red-500/10 border border-red-500/20 text-red-400 ml-4">🚫</div>
+        </div>
+      </div>
+
+      {/* Filter Bar - consistent style */}
+      <div className="filter-bar flex flex-col md:flex-row gap-4 justify-between items-center">
+        <div className="relative w-full md:w-80">
+          <svg className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          Add New Product
-        </button>
-      </div>
-
-      {/* Metrics Header */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-slate-400 mb-1 font-medium">Total Products</p>
-            <h2 className="text-2xl font-bold text-white">{items.length} SKUs</h2>
-            <p className="text-[11px] text-slate-500 mt-0.5">{totalStockCount} total units in stock</p>
-          </div>
-          <div className="h-10 w-10 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center font-bold">
-            📦
-          </div>
+          <input
+            type="text"
+            placeholder="Search by product name or SKU..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="form-input pl-10"
+          />
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-slate-400 mb-1 font-medium">Low Stock Alerts</p>
-            <h2 className="text-2xl font-bold text-amber-400">{lowStockCount} Items</h2>
-            <p className="text-[11px] text-slate-500 mt-0.5">Below threshold limit</p>
-          </div>
-          <div className="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center font-bold">
-            ⚠️
-          </div>
-        </div>
-
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-slate-400 mb-1 font-medium">Out of Stock</p>
-            <h2 className="text-2xl font-bold text-red-400">{outOfStockCount} Items</h2>
-            <p className="text-[11px] text-slate-500 mt-0.5">Fulfillment paused</p>
-          </div>
-          <div className="h-10 w-10 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 flex items-center justify-center font-bold">
-            🚫
-          </div>
-        </div>
-      </div>
-
-      {/* Filter & Search */}
-      <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
-        <input
-          type="text"
-          placeholder="Search by Product Name or SKU..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full md:w-80 bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:border-indigo-500"
-        />
-
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {['all', 'active', 'low_stock', 'out_of_stock'].map((st) => (
             <button
               key={st}
               onClick={() => setSelectedStatus(st)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition ${
-                selectedStatus === st
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-              }`}
+              className={`filter-pill ${selectedStatus === st ? 'active' : 'inactive'}`}
             >
               {st.replace('_', ' ')}
             </button>
@@ -238,31 +235,36 @@ export default function InventoryPage() {
       </div>
 
       {/* Inventory Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+      <div className="content-card">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-300">
-            <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] font-bold tracking-wider border-b border-slate-800">
+          <table className="data-table">
+            <thead>
               <tr>
-                <th className="px-6 py-4">Product Name</th>
-                <th className="px-4 py-4">SKU</th>
-                <th className="px-4 py-4">Category</th>
-                <th className="px-4 py-4">Price (Cost / Selling)</th>
-                <th className="px-4 py-4">Stock Level</th>
-                <th className="px-4 py-4">Status</th>
-                <th className="px-6 py-4 text-right">Quick Stock Action</th>
+                <th>Product Name</th>
+                <th>SKU</th>
+                <th>Category</th>
+                <th>Price (Cost / Selling)</th>
+                <th>Stock Level</th>
+                <th>Status</th>
+                <th className="text-right">Quick Stock Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/80">
+            <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="text-center py-8 text-slate-500">
-                    Loading inventory data...
+                  <td colSpan="7" className="text-center py-12 text-slate-500">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-xs">Loading inventory data...</span>
+                    </div>
                   </td>
                 </tr>
               ) : filteredItems.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="text-center py-8 text-slate-500">
-                    No matching inventory items found.
+                  <td colSpan="7" className="text-center py-12">
+                    <div className="text-4xl mb-2">📋</div>
+                    <p className="text-slate-300 font-semibold text-sm">No items found</p>
+                    <p className="text-slate-500 text-xs mt-1">Try adjusting your search or filter</p>
                   </td>
                 </tr>
               ) : (
@@ -271,60 +273,49 @@ export default function InventoryPage() {
                   const isOut = item.stock === 0;
 
                   return (
-                    <tr key={item._id} className="hover:bg-slate-800/50 transition">
-                      <td className="px-6 py-4 font-semibold text-white">{item.name}</td>
-                      <td className="px-4 py-4 font-mono text-slate-400">{item.sku || 'N/A'}</td>
-                      <td className="px-4 py-4">{item.category}</td>
-                      <td className="px-4 py-4">
-                        <span className="text-slate-400">₹{item.costPrice || 0}</span> /{' '}
-                        <span className="text-indigo-400 font-bold">₹{item.basePrice}</span>
+                    <tr key={item._id}>
+                      <td className="font-semibold text-white">{item.name}</td>
+                      <td className="font-mono text-slate-400 text-[11px]">{item.sku || 'N/A'}</td>
+                      <td>
+                        <span className="badge badge-info">{item.category}</span>
                       </td>
-                      <td className="px-4 py-4">
-                        <span className={`font-bold ${isOut ? 'text-red-400' : isLow ? 'text-amber-400' : 'text-emerald-400'}`}>
-                          {item.stock} units
+                      <td>
+                        <span className="text-slate-400">₹{(item.costPrice || 0).toLocaleString()}</span>
+                        <span className="text-slate-600 mx-1">/</span>
+                        <span className="text-indigo-400 font-bold">₹{item.basePrice.toLocaleString()}</span>
+                      </td>
+                      <td>
+                        <span className={`font-bold text-sm ${isOut ? 'text-red-400' : isLow ? 'text-amber-400' : 'text-emerald-400'}`}>
+                          {item.stock} <span className="text-xs font-normal text-slate-500">units</span>
                         </span>
                       </td>
-                      <td className="px-4 py-4">
+                      <td>
                         {isOut ? (
-                          <span className="px-2.5 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] font-bold">
-                            Out of Stock
-                          </span>
+                          <span className="badge badge-danger">Out of Stock</span>
                         ) : isLow ? (
-                          <span className="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-bold">
-                            Low Stock
-                          </span>
+                          <span className="badge badge-warning">Low Stock</span>
                         ) : (
-                          <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">
-                            Active
-                          </span>
+                          <span className="badge badge-success">Active</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end space-x-2">
+                      <td className="text-right">
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => handleStockChange(item._id, -5)}
-                            className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-bold transition text-[11px]"
-                          >
-                            -5
-                          </button>
+                            className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-bold transition text-[11px] border border-slate-700/50"
+                          >-5</button>
                           <button
                             onClick={() => handleStockChange(item._id, -1)}
-                            className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-bold transition text-[11px]"
-                          >
-                            -1
-                          </button>
+                            className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-bold transition text-[11px] border border-slate-700/50"
+                          >-1</button>
                           <button
                             onClick={() => handleStockChange(item._id, 1)}
-                            className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-bold transition text-[11px]"
-                          >
-                            +1
-                          </button>
+                            className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-bold transition text-[11px] border border-slate-700/50"
+                          >+1</button>
                           <button
                             onClick={() => handleStockChange(item._id, 10)}
-                            className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded font-bold transition text-[11px]"
-                          >
-                            +10
-                          </button>
+                            className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold transition text-[11px] shadow shadow-indigo-600/20"
+                          >+10</button>
                         </div>
                       </td>
                     </tr>
@@ -336,42 +327,43 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      {/* Modal Form */}
+      {/* Add Product Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-base font-bold text-white">Register Inventory SKU</h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white">✕</button>
-            </div>
-            <form onSubmit={handleAddProduct} className="space-y-3">
+        <div className="modal-overlay">
+          <div className="modal-box">
+            <div className="flex justify-between items-center mb-6">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-300 mb-1">Product Title</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
+                <h3 className="text-base font-bold text-white">Register Inventory SKU</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Add a new product to your catalog</p>
+              </div>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition text-lg"
+              >✕</button>
+            </div>
+
+            <form onSubmit={handleAddProduct} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">Product Title</label>
+                <input type="text" required value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
+                  className="form-input" placeholder="e.g. Wireless Keyboard Pro"
                 />
               </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">SKU Code</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. ELE-001"
-                    value={formData.sku}
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">SKU Code</label>
+                  <input type="text" placeholder="e.g. ELE-001" value={formData.sku}
                     onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
+                    className="form-input"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">Category</label>
-                  <select
-                    value={formData.category}
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Category</label>
+                  <select value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
+                    className="form-input"
                   >
                     <option value="Electronics">Electronics</option>
                     <option value="Furniture">Furniture</option>
@@ -383,51 +375,33 @@ export default function InventoryPage() {
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">Stock Units</label>
-                  <input
-                    type="number"
-                    required
-                    min="0"
-                    value={formData.stock}
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Stock Units</label>
+                  <input type="number" required min="0" value={formData.stock}
                     onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
+                    className="form-input" placeholder="50"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">Selling Price (₹)</label>
-                  <input
-                    type="number"
-                    required
-                    min="0"
-                    value={formData.basePrice}
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Selling (₹)</label>
+                  <input type="number" required min="0" value={formData.basePrice}
                     onChange={(e) => setFormData({ ...formData, basePrice: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
+                    className="form-input" placeholder="2499"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">Cost Price (₹)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.costPrice}
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Cost (₹)</label>
+                  <input type="number" min="0" value={formData.costPrice}
                     onChange={(e) => setFormData({ ...formData, costPrice: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
+                    className="form-input" placeholder="1200"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end space-x-2 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-3 py-1.5 bg-slate-800 text-slate-400 text-xs rounded-xl"
-                >
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary">
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="px-4 py-1.5 bg-indigo-600 text-white font-semibold text-xs rounded-xl"
-                >
+                <button type="submit" className="btn-primary">
                   Save to Inventory
                 </button>
               </div>
