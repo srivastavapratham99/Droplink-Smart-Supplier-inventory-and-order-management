@@ -68,12 +68,19 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide name, email and password' });
     }
 
+    if (role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin accounts cannot be registered publicly. New admins can only be created from the Admin Dashboard.',
+      });
+    }
+
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'An account with this email already exists' });
     }
 
-    const validRoles = ['user', 'retailer', 'supplier', 'admin'];
+    const validRoles = ['user', 'retailer', 'supplier'];
     const assignedRole = validRoles.includes(role) ? (role === 'retailer' ? 'user' : role) : 'user';
 
     const newUser = await User.create({
@@ -132,7 +139,8 @@ router.post('/login', async (req, res) => {
       }
     }
 
-    if (!user || user.password !== password) {
+    const isMatch = await user.matchPassword(password);
+    if (!user || !isMatch) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 

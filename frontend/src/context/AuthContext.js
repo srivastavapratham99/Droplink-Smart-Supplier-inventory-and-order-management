@@ -39,26 +39,44 @@ export const DEMO_PROFILES = {
 };
 
 export function AuthProvider({ children }) {
-  // Default logged in account is Supplier (Apex Wholesale) for initial preview
   const [user, setUser] = useState(DEMO_PROFILES.supplier);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load account from localStorage if present
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('droplink_user_profile');
-      if (stored) {
-        try {
-          setUser(JSON.parse(stored));
-        } catch (e) {
-          setUser(DEMO_PROFILES.supplier);
+    async function initAuth() {
+      if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('droplink_token');
+        const stored = localStorage.getItem('droplink_user_profile');
+
+        if (stored) {
+          try {
+            setUser(JSON.parse(stored));
+          } catch (e) {
+            setUser(DEMO_PROFILES.supplier);
+          }
+        } else {
+          localStorage.setItem('droplink_user_profile', JSON.stringify(DEMO_PROFILES.supplier));
+          localStorage.setItem('droplink_token', DEMO_PROFILES.supplier.token);
         }
-      } else {
-        // Save default demo supplier profile
-        localStorage.setItem('droplink_user_profile', JSON.stringify(DEMO_PROFILES.supplier));
+
+        // Try verifying profile with backend if non-demo token
+        if (token && !token.startsWith('demo-token-')) {
+          try {
+            const res = await authService.getProfile();
+            if (res.success && res.user) {
+              const fullUser = { ...res.user, token };
+              setUser(fullUser);
+              localStorage.setItem('droplink_user_profile', JSON.stringify(fullUser));
+            }
+          } catch (err) {
+            // Token expired or server unreachable, fallback to stored demo
+          }
+        }
       }
+      setLoading(false);
     }
-    setLoading(false);
+
+    initAuth();
   }, []);
 
   const loginAsDemo = (roleKey) => {
@@ -103,7 +121,6 @@ export function AuthProvider({ children }) {
         return { success: true, user: fullUser };
       }
     } catch (err) {
-      // Fallback creation for offline demo mode
       const role = userData.role || 'user';
       const demoAccount = {
         _id: 'custom-' + Date.now(),
@@ -117,6 +134,7 @@ export function AuthProvider({ children }) {
       };
       setUser(demoAccount);
       localStorage.setItem('droplink_user_profile', JSON.stringify(demoAccount));
+      localStorage.setItem('droplink_token', demoAccount.token);
       return { success: true, user: demoAccount };
     }
   };

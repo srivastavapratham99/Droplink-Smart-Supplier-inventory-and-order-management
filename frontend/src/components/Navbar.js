@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useAuth, DEMO_PROFILES } from '@/context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -14,16 +14,18 @@ export default function Navbar() {
   const getNavLinks = () => {
     if (isAdmin) {
       return [
-        { name: 'Marketplace', href: '/' },
+        { name: 'Home', href: '/' },
+        { name: 'Marketplace', href: '/marketplace' },
         { name: 'Admin Portal', href: '/admin' },
         { name: 'Supplier Inventory', href: '/inventory' },
         { name: 'All Orders', href: '/orders' },
-        { name: 'Platform Analytics', href: '/analytics' },
+        { name: 'Analytics', href: '/analytics' },
       ];
     }
     if (isSupplier) {
       return [
-        { name: 'Marketplace', href: '/' },
+        { name: 'Home', href: '/' },
+        { name: 'Marketplace', href: '/marketplace' },
         { name: 'My Inventory', href: '/inventory' },
         { name: 'Fulfilled Orders', href: '/orders' },
         { name: 'Supplier Analytics', href: '/analytics' },
@@ -31,7 +33,8 @@ export default function Navbar() {
     }
     // Retailer / User Account
     return [
-      { name: 'Marketplace', href: '/' },
+      { name: 'Home', href: '/' },
+      { name: 'Marketplace', href: '/marketplace' },
       { name: 'My Store Sync', href: '/my-store' },
       { name: 'My Orders', href: '/orders' },
       { name: 'Sales Analytics', href: '/analytics' },

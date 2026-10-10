@@ -70,7 +70,7 @@ export default function ProductDetailPage({ params }) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-16 text-center text-slate-400">
         <p>Product not found.</p>
-        <Link href="/" className="text-indigo-400 font-semibold text-xs mt-4 inline-block">
+        <Link href="/marketplace" className="text-indigo-400 font-semibold text-xs mt-4 inline-block">
           ← Back to Marketplace
         </Link>
       </div>
@@ -83,7 +83,7 @@ export default function ProductDetailPage({ params }) {
     <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
       {/* Breadcrumb */}
       <div className="mb-6 flex items-center space-x-2 text-xs text-slate-400">
-        <Link href="/" className="hover:text-white transition">Marketplace</Link>
+        <Link href="/marketplace" className="hover:text-white transition">Marketplace</Link>
         <span>/</span>
         <span className="text-slate-300 font-medium">{product.category}</span>
         <span>/</span>

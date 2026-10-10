@@ -53,6 +53,49 @@ router.patch('/users/:id/verify-supplier', protect, adminOnly, async (req, res) 
 });
 
 /**
+ * @route   POST /api/admin/create-admin
+ * @desc    Create a new Admin account (Admin Dashboard authorization required)
+ */
+router.post('/create-admin', protect, adminOnly, async (req, res) => {
+  try {
+    const { name, email, password, adminLevel = 'Operations' } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ success: false, message: 'Please provide name, email, and password' });
+    }
+
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: 'An account with this email already exists' });
+    }
+
+    const newAdmin = await User.create({
+      name,
+      email: email.toLowerCase(),
+      password,
+      role: 'admin',
+      adminLevel,
+      companyName: 'Droplink Operations HQ',
+      status: 'active',
+    });
+
+    res.status(201).json({
+      success: true,
+      message: `New Admin account (${newAdmin.name}) created successfully`,
+      admin: {
+        _id: newAdmin._id,
+        name: newAdmin.name,
+        email: newAdmin.email,
+        role: newAdmin.role,
+        adminLevel: newAdmin.adminLevel,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
  * @route   PATCH /api/admin/users/:id/role
  * @desc    Update a user's role (User, Supplier, Admin)
  */

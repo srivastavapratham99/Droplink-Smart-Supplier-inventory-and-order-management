@@ -10,21 +10,59 @@ export default function LoginPage() {
 
   const [mode, setMode] = useState('login'); // 'login' or 'register'
   const [selectedRole, setSelectedRole] = useState('supplier'); // 'supplier', 'user', 'admin'
+  const [showPassword, setShowPassword] = useState(false);
 
+  // Pre-fill default credentials based on selected role
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
-    password: '',
-    companyName: '',
-    storeName: '',
+    email: 'supplier@apex.com',
+    password: 'password123',
+    companyName: 'Apex Wholesale Solutions',
+    storeName: 'TrendStore Retail Hub',
     storePlatform: 'Shopify',
   });
 
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleRoleSelect = (role) => {
+    setSelectedRole(role);
+    setErrorMsg('');
+
+    if (mode === 'login') {
+      if (role === 'supplier') {
+        setFormData((prev) => ({ ...prev, email: 'supplier@apex.com', password: 'password123' }));
+      } else if (role === 'user') {
+        setFormData((prev) => ({ ...prev, email: 'user@trendstore.com', password: 'password123' }));
+      } else if (role === 'admin') {
+        setFormData((prev) => ({ ...prev, email: 'admin@droplink.com', password: 'password123' }));
+      }
+    }
+  };
+
+  const handleModeChange = (newMode) => {
+    setMode(newMode);
+    setErrorMsg('');
+    setSuccessMsg('');
+    if (newMode === 'register') {
+      if (selectedRole === 'admin') setSelectedRole('supplier');
+      setFormData({
+        name: '',
+        email: '',
+        password: '',
+        companyName: '',
+        storeName: '',
+        storePlatform: 'Shopify',
+      });
+    } else {
+      handleRoleSelect(selectedRole);
+    }
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (errorMsg) setErrorMsg('');
   };
 
   const handleSubmit = async (e) => {
@@ -32,39 +70,53 @@ export default function LoginPage() {
     setErrorMsg('');
     setSuccessMsg('');
 
-    if (mode === 'login') {
-      const res = await login(formData.email, formData.password);
-      if (res?.success) {
-        setSuccessMsg(`Logged in successfully as ${res.user.role.toUpperCase()}`);
-        setTimeout(() => {
-          if (res.user.role === 'admin') router.push('/admin');
-          else if (res.user.role === 'supplier') router.push('/inventory');
-          else router.push('/my-store');
-        }, 600);
+    if (mode === 'register' && selectedRole === 'admin') {
+      setErrorMsg('Admin accounts cannot be created publicly. Please login with the predefined admin account.');
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      if (mode === 'login') {
+        const res = await login(formData.email, formData.password);
+        if (res?.success) {
+          setSuccessMsg(`Authenticated successfully as ${res.user.role.toUpperCase()}`);
+          setTimeout(() => {
+            if (res.user.role === 'admin') router.push('/admin');
+            else if (res.user.role === 'supplier') router.push('/inventory');
+            else router.push('/my-store');
+          }, 500);
+        } else {
+          setErrorMsg(res?.message || 'Invalid email or password');
+        }
       } else {
-        setErrorMsg(res?.message || 'Login failed');
+        const res = await register({
+          ...formData,
+          role: selectedRole,
+        });
+        if (res?.success) {
+          setSuccessMsg(`Account registered for ${selectedRole.toUpperCase()}! Redirecting...`);
+          setTimeout(() => {
+            if (selectedRole === 'admin') router.push('/admin');
+            else if (selectedRole === 'supplier') router.push('/inventory');
+            else router.push('/my-store');
+          }, 500);
+        } else {
+          setErrorMsg(res?.message || 'Registration failed. Please check form fields.');
+        }
       }
-    } else {
-      const res = await register({
-        ...formData,
-        role: selectedRole,
-      });
-      if (res?.success) {
-        setSuccessMsg(`Account created for ${selectedRole.toUpperCase()}! Redirecting...`);
-        setTimeout(() => {
-          if (selectedRole === 'admin') router.push('/admin');
-          else if (selectedRole === 'supplier') router.push('/inventory');
-          else router.push('/my-store');
-        }, 600);
-      } else {
-        setErrorMsg(res?.message || 'Registration failed');
-      }
+    } catch (err) {
+      setErrorMsg(err.message || 'An error occurred during authentication.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleFastDemoLogin = (roleKey) => {
+    setErrorMsg('');
     const profile = loginAsDemo(roleKey);
-    setSuccessMsg(`Instant demo login active for ${profile.name}`);
+    setSuccessMsg(`Instant demo account active: ${profile.name}`);
     setTimeout(() => {
       if (roleKey === 'admin') router.push('/admin');
       else if (roleKey === 'supplier') router.push('/inventory');
@@ -73,14 +125,14 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="max-w-xl mx-auto px-4 py-12">
+    <main className="max-w-xl mx-auto px-4 py-10">
       <div className="content-card p-8 shadow-2xl relative overflow-hidden">
         {/* Glow accent */}
         <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
         {/* Title */}
         <div className="text-center mb-8">
-          <div className="inline-flex h-12 w-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 items-center justify-center text-white font-black text-xl mb-3 shadow-lg shadow-indigo-500/30">
+          <div className="inline-flex h-12 w-12 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-violet-600 items-center justify-center text-white font-black text-xl mb-3 shadow-lg shadow-indigo-500/30">
             DL
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight">
@@ -95,7 +147,7 @@ export default function LoginPage() {
         <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 mb-6">
           <button
             type="button"
-            onClick={() => setMode('login')}
+            onClick={() => handleModeChange('login')}
             className={`flex-1 py-2 rounded-lg text-xs font-bold transition ${
               mode === 'login' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
             }`}
@@ -104,7 +156,7 @@ export default function LoginPage() {
           </button>
           <button
             type="button"
-            onClick={() => setMode('register')}
+            onClick={() => handleModeChange('register')}
             className={`flex-1 py-2 rounded-lg text-xs font-bold transition ${
               mode === 'register' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
             }`}
@@ -113,57 +165,96 @@ export default function LoginPage() {
           </button>
         </div>
 
-        {/* Account Role Tabs (for Registration & Account Context) */}
+        {/* Account Role Tabs */}
         <div className="mb-6">
           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
-            Select Account Role Type
+            {mode === 'login' ? 'Select Account Role Type' : 'Select Account Type to Register'}
           </label>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => { setSelectedRole('supplier'); setFormData({...formData, email: 'supplier@apex.com'}); }}
-              className={`p-3 rounded-xl border text-left transition flex flex-col justify-between ${
-                selectedRole === 'supplier'
-                  ? 'bg-indigo-600/20 border-indigo-500 text-white'
-                  : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
-              }`}
-            >
-              <span className="text-xs font-bold text-indigo-400">Supplier</span>
-              <span className="text-[10px] text-slate-400 mt-1">Distribute SKUs</span>
-            </button>
 
-            <button
-              type="button"
-              onClick={() => { setSelectedRole('user'); setFormData({...formData, email: 'user@trendstore.com'}); }}
-              className={`p-3 rounded-xl border text-left transition flex flex-col justify-between ${
-                selectedRole === 'user'
-                  ? 'bg-emerald-600/20 border-emerald-500 text-white'
-                  : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
-              }`}
-            >
-              <span className="text-xs font-bold text-emerald-400">User / Retailer</span>
-              <span className="text-[10px] text-slate-400 mt-1">Dropshipping</span>
-            </button>
+          {mode === 'login' ? (
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => handleRoleSelect('supplier')}
+                className={`p-3 rounded-xl border text-left transition flex flex-col justify-between ${
+                  selectedRole === 'supplier'
+                    ? 'bg-indigo-600/20 border-indigo-500 text-white'
+                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                }`}
+              >
+                <span className="text-xs font-bold text-indigo-400">Supplier</span>
+                <span className="text-[10px] text-slate-400 mt-1">Distribute SKUs</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => { setSelectedRole('admin'); setFormData({...formData, email: 'admin@droplink.com'}); }}
-              className={`p-3 rounded-xl border text-left transition flex flex-col justify-between ${
-                selectedRole === 'admin'
-                  ? 'bg-rose-600/20 border-rose-500 text-white'
-                  : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
-              }`}
-            >
-              <span className="text-xs font-bold text-rose-400">Admin</span>
-              <span className="text-[10px] text-slate-400 mt-1">Governance</span>
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={() => handleRoleSelect('user')}
+                className={`p-3 rounded-xl border text-left transition flex flex-col justify-between ${
+                  selectedRole === 'user'
+                    ? 'bg-emerald-600/20 border-emerald-500 text-white'
+                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                }`}
+              >
+                <span className="text-xs font-bold text-emerald-400">User / Retailer</span>
+                <span className="text-[10px] text-slate-400 mt-1">Dropshipping</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleRoleSelect('admin')}
+                className={`p-3 rounded-xl border text-left transition flex flex-col justify-between ${
+                  selectedRole === 'admin'
+                    ? 'bg-rose-600/20 border-rose-500 text-white'
+                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                }`}
+              >
+                <span className="text-xs font-bold text-rose-400">Predefined Admin</span>
+                <span className="text-[10px] text-slate-400 mt-1">Governance</span>
+              </button>
+            </div>
+          ) : (
+            <div>
+              <div className="grid grid-cols-2 gap-3 mb-2">
+                <button
+                  type="button"
+                  onClick={() => handleRoleSelect('supplier')}
+                  className={`p-3.5 rounded-xl border text-left transition flex flex-col justify-between ${
+                    selectedRole === 'supplier'
+                      ? 'bg-indigo-600/20 border-indigo-500 text-white'
+                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <span className="text-xs font-bold text-indigo-400">Supplier Account</span>
+                  <span className="text-[10px] text-slate-400 mt-1">List & Fulfill Wholesale SKUs</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleRoleSelect('user')}
+                  className={`p-3.5 rounded-xl border text-left transition flex flex-col justify-between ${
+                    selectedRole === 'user'
+                      ? 'bg-emerald-600/20 border-emerald-500 text-white'
+                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <span className="text-xs font-bold text-emerald-400">User / Retailer Account</span>
+                  <span className="text-[10px] text-slate-400 mt-1">Connect Store & Dropship</span>
+                </button>
+              </div>
+
+              <p className="text-[11px] text-slate-400 bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80 flex items-center space-x-2">
+                <span className="text-indigo-400 font-bold">ℹ️ Admin Accounts:</span>
+                <span>Predefined admin logins (`admin@droplink.com`). Additional admins can be created internally inside the Admin Dashboard.</span>
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Feedback Messages */}
         {errorMsg && (
-          <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium">
-            ⚠️ {errorMsg}
+          <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium flex items-center justify-between">
+            <span>⚠️ {errorMsg}</span>
+            <button onClick={() => setErrorMsg('')} className="text-red-400 font-bold ml-2">✕</button>
           </div>
         )}
         {successMsg && (
@@ -203,9 +294,18 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="text-xs text-slate-300 font-semibold block mb-1.5">Account Password</label>
+            <div className="flex justify-between items-center mb-1.5">
+              <label className="text-xs text-slate-300 font-semibold">Account Password</label>
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="text-[11px] text-indigo-400 hover:underline"
+              >
+                {showPassword ? 'Hide Password' : 'Show Password'}
+              </button>
+            </div>
             <input
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               name="password"
               required
               placeholder="••••••••"
@@ -218,11 +318,11 @@ export default function LoginPage() {
           {/* Role specific inputs on registration */}
           {mode === 'register' && selectedRole === 'supplier' && (
             <div>
-              <label className="text-xs text-slate-300 font-semibold block mb-1.5">Supplier / Business Company Name</label>
+              <label className="text-xs text-slate-300 font-semibold block mb-1.5">Supplier / Company Name</label>
               <input
                 type="text"
                 name="companyName"
-                placeholder="e.g. Apex Electronics Ltd."
+                placeholder="e.g. Apex Electronics Supplies"
                 value={formData.companyName}
                 onChange={handleChange}
                 className="custom-input text-xs"
@@ -237,7 +337,7 @@ export default function LoginPage() {
                 <input
                   type="text"
                   name="storeName"
-                  placeholder="e.g. TrendStore"
+                  placeholder="e.g. TrendStore Retail"
                   value={formData.storeName}
                   onChange={handleChange}
                   className="custom-input text-xs"
@@ -260,8 +360,16 @@ export default function LoginPage() {
             </div>
           )}
 
-          <button type="submit" className="w-full btn-primary justify-center py-3 text-xs mt-2">
-            {mode === 'login' ? `Sign In as ${selectedRole.toUpperCase()}` : `Create ${selectedRole.toUpperCase()} Account`}
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full btn-primary justify-center py-3 text-xs mt-2 disabled:opacity-50"
+          >
+            {submitting
+              ? 'Authenticating...'
+              : mode === 'login'
+              ? `Sign In as ${selectedRole.toUpperCase()}`
+              : `Create ${selectedRole.toUpperCase()} Account`}
           </button>
         </form>
 

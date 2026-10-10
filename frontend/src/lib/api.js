@@ -66,6 +66,12 @@ export const adminService = {
   getUsers: (role) => {
     return fetchAPI(`/admin/users${role ? `?role=${role}` : ''}`);
   },
+  createAdmin: (adminData) => {
+    return fetchAPI('/admin/create-admin', {
+      method: 'POST',
+      body: JSON.stringify(adminData),
+    });
+  },
   verifySupplier: (id, isVerified, status) => {
     return fetchAPI(`/admin/users/${id}/verify-supplier`, {
       method: 'PATCH',
