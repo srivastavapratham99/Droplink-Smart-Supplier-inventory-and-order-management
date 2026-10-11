@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { adminService } from '@/lib/api';
 
 export default function AdminPage() {
-  const { user, isAdmin, isAuthenticated, loginAsDemo } = useAuth();
+  const router = useRouter();
+  const { user, isAdmin, isAuthenticated, logout, loginAsDemo, loading: authLoading } = useAuth();
   const [users, setUsers] = useState([]);
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -136,6 +138,95 @@ export default function AdminPage() {
     return matchesRole && matchesSearch;
   });
 
+
+  if (authLoading) {
+    return (
+      <main className="max-w-7xl mx-auto px-4 py-20 flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="w-12 h-12 border-4 border-rose-500/20 border-t-rose-500 rounded-full animate-spin mb-4"></div>
+        <p className="text-xs text-slate-400 font-medium tracking-wide">Verifying platform administrator authorization...</p>
+      </main>
+    );
+  }
+
+  // Strict Admin Access Guard - Unauthenticated
+  if (!isAuthenticated) {
+    return (
+      <main className="max-w-2xl mx-auto px-4 py-20 min-h-[70vh] flex items-center justify-center">
+        <div className="w-full p-8 sm:p-12 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl backdrop-blur-xl text-center">
+          <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center text-3xl mx-auto mb-6 shadow-lg shadow-rose-500/5">
+            🔒
+          </div>
+          <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-rose-500/10 text-rose-400 border border-rose-500/20 mb-4 inline-block">
+            Administrator Access Required
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mb-3">
+            Admin Portal Sign In
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto leading-relaxed mb-6">
+            Platform governance and user management controls are strictly restricted to authorized Administrator accounts.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="/login"
+              className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition shadow-lg shadow-rose-600/30 text-center"
+            >
+              Sign In to Admin Account
+            </Link>
+            <Link
+              href="/marketplace"
+              className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs border border-slate-700 transition text-center"
+            >
+              Return to Marketplace
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // Strict Admin Access Guard - Non-Admin Forbidden
+  if (!isAdmin) {
+    return (
+      <main className="max-w-2xl mx-auto px-4 py-20 min-h-[70vh] flex items-center justify-center">
+        <div className="w-full p-8 sm:p-12 rounded-3xl bg-slate-900/90 border border-rose-500/30 shadow-2xl backdrop-blur-xl text-center relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-rose-500/10 rounded-full blur-3xl pointer-events-none -mr-24 -mt-24"></div>
+          <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center text-3xl mx-auto mb-6 shadow-lg shadow-rose-500/10">
+            🚫
+          </div>
+          <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-rose-500/10 text-rose-400 border border-rose-500/30 mb-4 inline-block">
+            Access Forbidden (403)
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mb-3">
+            Admin Portal Restricted
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto leading-relaxed mb-2">
+            You cannot open the admin portal because your account is registered as a <strong className="text-amber-300 font-bold">{user?.role ? user.role.toUpperCase() : 'USER'}</strong>.
+          </p>
+          <p className="text-[11px] text-slate-400 max-w-md mx-auto mb-8 leading-relaxed">
+            Platform governance and verification tools are strictly reserved for platform administrators. Registered accounts cannot switch to administrator privileges.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="/marketplace"
+              className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition shadow-lg shadow-indigo-600/30 text-center"
+            >
+              Go to Marketplace
+            </Link>
+            <button
+              onClick={() => {
+                logout();
+                router.push('/login');
+              }}
+              className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-slate-800/80 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/30 text-slate-400 font-semibold text-xs border border-slate-700 transition text-center"
+            >
+              Sign Out
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
       {/* Toast Notification */}
@@ -145,49 +236,6 @@ export default function AdminPage() {
           <span className="text-xs font-semibold">{toastMsg}</span>
         </div>
       )}
-
-      {/* Non-admin / Signed Out Notice */}
-      {!isAuthenticated ? (
-        <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center space-x-3">
-            <span className="text-xl">🔒</span>
-            <div>
-              <p className="text-xs font-bold">You are currently signed out</p>
-              <p className="text-[11px] text-amber-300/80">Sign in with an Administrator account to view governance controls.</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => loginAsDemo('admin')}
-              className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl transition"
-            >
-              Demo Admin Login
-            </button>
-            <Link
-              href="/login"
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-xl transition"
-            >
-              Sign In
-            </Link>
-          </div>
-        </div>
-      ) : !isAdmin ? (
-        <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center space-x-3">
-            <span className="text-xl">⚠️</span>
-            <div>
-              <p className="text-xs font-bold">Access Restricted: Registered as {user?.role ? user.role.toUpperCase() : 'USER'}</p>
-              <p className="text-[11px] text-amber-300/80">Platform governance requires Administrator privileges. Registered accounts cannot switch roles arbitrarily.</p>
-            </div>
-          </div>
-          <Link
-            href="/login"
-            className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-xl transition whitespace-nowrap text-center"
-          >
-            Sign Out &amp; Switch Account
-          </Link>
-        </div>
-      ) : null}
 
       {/* Header Banner */}
       <div className="page-header-card">

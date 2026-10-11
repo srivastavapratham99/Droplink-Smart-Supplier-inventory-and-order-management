@@ -128,7 +128,7 @@ router.get('/stats', protect, adminOnly, async (req, res) => {
     try {
       totalProducts = await Product.countDocuments();
     } catch (e) {
-      totalProducts = 48; // fallback mock
+      totalProducts = 0;
     }
 
     res.status(200).json({

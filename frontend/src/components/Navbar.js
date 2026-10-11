@@ -44,7 +44,6 @@ export default function Navbar() {
       { name: 'Marketplace', href: '/marketplace' },
       { name: 'My Store Sync', href: '/my-store' },
       { name: 'My Orders', href: '/orders' },
-      { name: 'Sales Analytics', href: '/analytics' },
     ];
   };
 
