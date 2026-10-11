@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 const connectDB = require('./connection');
 const productRouter = require('./routes/productRouter');
@@ -8,10 +10,19 @@ const adminRouter = require('./routes/adminRouter');
 
 const app = express();
 
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, 'uploads/products');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
 // Middleware
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '15mb' }));
+app.use(express.urlencoded({ extended: true, limit: '15mb' }));
+
+// Static uploads serving
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Connect Database
 connectDB();

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
-import { productService } from '@/lib/api';
+import { productService, getImageUrl } from '@/lib/api';
 
 export default function ProductDetailPage({ params }) {
   const resolvedParams = use(params);
@@ -69,7 +69,7 @@ export default function ProductDetailPage({ params }) {
           <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden h-96 relative shadow-xl">
             {product.images && product.images[selectedImg]?.url ? (
               <img
-                src={product.images[selectedImg].url}
+                src={getImageUrl(product.images[selectedImg].url)}
                 alt={product.name}
                 className="w-full h-full object-cover"
               />
@@ -88,7 +88,7 @@ export default function ProductDetailPage({ params }) {
                     selectedImg === idx ? 'border-indigo-500' : 'border-slate-800 opacity-60 hover:opacity-100'
                   }`}
                 >
-                  <img src={img.url} alt="" className="w-full h-full object-cover" />
+                  <img src={getImageUrl(img.url)} alt="" className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>

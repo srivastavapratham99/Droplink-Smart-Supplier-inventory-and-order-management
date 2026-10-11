@@ -1,6 +1,17 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 /**
+ * Normalizes an image path/URL to an absolute URL.
+ * Supports relative backend paths (/uploads/products/...), CDN links, or external URLs.
+ */
+export const getImageUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;
+  const backendBase = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace('/api', '');
+  return `${backendBase}${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
+/**
  * Helper function for HTTP requests to the backend API
  */
 async function fetchAPI(endpoint, options = {}) {
@@ -144,5 +155,24 @@ export const productService = {
     return fetchAPI(`/products/${id}`, {
       method: 'DELETE',
     });
+  },
+
+  /** Upload a product image file */
+  uploadImage: async (file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const token = typeof window !== 'undefined' ? localStorage.getItem('droplink_token') : null;
+    const response = await fetch(`${API_BASE_URL}/products/upload-image`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Image upload failed');
+    }
+    return data;
   },
 };

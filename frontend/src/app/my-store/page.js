@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { productService } from '@/lib/api';
+import { productService, getImageUrl } from '@/lib/api';
 
 export default function MyStorePage() {
   const router = useRouter();
@@ -280,7 +280,7 @@ export default function MyStorePage() {
               const supplierName = item.supplier?.companyName || item.supplier?.name || 'Verified Supplier';
               const imageUrl =
                 item.images && item.images[0]?.url
-                  ? item.images[0].url
+                  ? getImageUrl(item.images[0].url)
                   : 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&auto=format&fit=crop&q=80';
 
               return (

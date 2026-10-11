@@ -1,9 +1,71 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const Product = require('../models/Product');
 const User = require('../models/User');
 const { protect, supplierOrAdmin, adminOnly } = require('../middleware');
+
+// Configure disk storage for product image uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadPath = path.join(__dirname, '../uploads/products');
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
+  },
+  filename: (req, file, cb) => {
+    const cleanExt = path.extname(file.originalname).toLowerCase() || '.jpg';
+    const uniqueName = `prod-${Date.now()}-${Math.round(Math.random() * 1e9)}${cleanExt}`;
+    cb(null, uniqueName);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
+  fileFilter: (req, file, cb) => {
+    const allowed = /jpeg|jpg|png|webp|gif|svg/;
+    const ext = path.extname(file.originalname).toLowerCase().replace('.', '');
+    const mime = file.mimetype.toLowerCase();
+    if (allowed.test(ext) || allowed.test(mime)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files (JPEG, PNG, WEBP, GIF, SVG) are allowed'));
+    }
+  },
+});
+
+/**
+ * @route   POST /api/products/upload-image
+ * @desc    Upload product image file
+ * @access  Private (Supplier / Admin)
+ */
+router.post('/upload-image', protect, supplierOrAdmin, upload.single('image'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Please select an image file to upload' });
+    }
+
+    const host = req.get('host') || 'localhost:5000';
+    const protocol = req.protocol || 'http';
+    const relativeUrl = `/uploads/products/${req.file.filename}`;
+    const fullUrl = `${protocol}://${host}${relativeUrl}`;
+
+    res.status(200).json({
+      success: true,
+      message: 'Product image uploaded successfully',
+      url: relativeUrl,
+      fullUrl,
+      filename: req.file.filename,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 /**
  * @route   GET /api/products
@@ -189,10 +251,29 @@ router.post('/', protect, supplierOrAdmin, async (req, res) => {
     }
 
     const sku = req.body.sku?.trim() || `SKU-${Date.now().toString().slice(-6)}`;
+
+    // Normalize images: can receive imageUrl string or images array
+    let formattedImages = [];
+    if (Array.isArray(req.body.images) && req.body.images.length > 0) {
+      formattedImages = req.body.images.map((img, i) => {
+        if (typeof img === 'string') {
+          return { url: img, isPrimary: i === 0, altText: req.body.name || '' };
+        }
+        return {
+          url: img.url,
+          isPrimary: img.isPrimary !== undefined ? img.isPrimary : i === 0,
+          altText: img.altText || req.body.name || '',
+        };
+      });
+    } else if (req.body.imageUrl && typeof req.body.imageUrl === 'string' && req.body.imageUrl.trim()) {
+      formattedImages = [{ url: req.body.imageUrl.trim(), isPrimary: true, altText: req.body.name || '' }];
+    }
+
     const productData = {
       ...req.body,
       sku,
       supplier: supplierId, // Strictly binds product to this specific supplier
+      images: formattedImages.length > 0 ? formattedImages : req.body.images || [],
       isApproved: true,
       status: req.body.status || 'active',
     };
@@ -231,7 +312,23 @@ router.put('/:id', protect, supplierOrAdmin, async (req, res) => {
       return res.status(403).json({ success: false, message: 'Access denied: You do not own this product' });
     }
 
-    product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+    const updateData = { ...req.body };
+    if (Array.isArray(req.body.images) && req.body.images.length > 0) {
+      updateData.images = req.body.images.map((img, i) => {
+        if (typeof img === 'string') {
+          return { url: img, isPrimary: i === 0, altText: req.body.name || '' };
+        }
+        return {
+          url: img.url,
+          isPrimary: img.isPrimary !== undefined ? img.isPrimary : i === 0,
+          altText: img.altText || req.body.name || '',
+        };
+      });
+    } else if (req.body.imageUrl && typeof req.body.imageUrl === 'string' && req.body.imageUrl.trim()) {
+      updateData.images = [{ url: req.body.imageUrl.trim(), isPrimary: true, altText: req.body.name || '' }];
+    }
+
+    product = await Product.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
       runValidators: true,
     });

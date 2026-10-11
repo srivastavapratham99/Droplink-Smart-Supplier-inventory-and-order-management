@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { productService } from '@/lib/api';
+import { productService, getImageUrl } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
 const CATEGORIES = ['All Categories', 'Electronics', 'Furniture', 'Wearables', 'Lifestyle', 'Fashion'];
@@ -14,6 +14,7 @@ export default function InventoryPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false); // false | 'add' | 'edit'
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
@@ -30,6 +31,7 @@ export default function InventoryPage() {
     stock: '',
     lowStockThreshold: '10',
     description: '',
+    imageUrl: '',
   });
 
   // Edit Product Modal
@@ -45,6 +47,7 @@ export default function InventoryPage() {
     lowStockThreshold: '10',
     status: 'active',
     description: '',
+    imageUrl: '',
   });
 
   // Delete Confirmation
@@ -90,6 +93,20 @@ export default function InventoryPage() {
     }
   }, [user?._id, user?.id, isSupplier, isAdmin, authLoading]);
 
+  // Handle Escape key to close open modals
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsAddModalOpen(false);
+        setIsEditModalOpen(false);
+        setEditingItem(null);
+        setDeleteTarget(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   // Quick Stock Adjustment
   const handleStockChange = async (id, delta) => {
     setActionLoading(`stock-${id}`);
@@ -116,6 +133,41 @@ export default function InventoryPage() {
     }
   };
 
+  // Image Upload Handler
+  const handleFileUpload = async (e, formType) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select a valid image file (PNG, JPG, WEBP, GIF)', 'error');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('Image file size must be less than 10MB', 'error');
+      return;
+    }
+
+    setUploadingImage(formType);
+    try {
+      const res = await productService.uploadImage(file);
+      if (res && res.success && res.url) {
+        if (formType === 'add') {
+          setAddFormData((prev) => ({ ...prev, imageUrl: res.url }));
+        } else {
+          setEditFormData((prev) => ({ ...prev, imageUrl: res.url }));
+        }
+        showToast('Product image uploaded successfully');
+      } else {
+        showToast(res?.message || 'Failed to upload image', 'error');
+      }
+    } catch (err) {
+      showToast(err.message || 'Image upload failed', 'error');
+    } finally {
+      setUploadingImage(false);
+      e.target.value = '';
+    }
+  };
+
   // Create Product
   const handleAddProduct = async (e) => {
     e.preventDefault();
@@ -130,6 +182,8 @@ export default function InventoryPage() {
       stock: Number(addFormData.stock) || 0,
       lowStockThreshold: Number(addFormData.lowStockThreshold) || 10,
       description: addFormData.description,
+      imageUrl: addFormData.imageUrl || undefined,
+      images: addFormData.imageUrl ? [{ url: addFormData.imageUrl, isPrimary: true, altText: addFormData.name }] : [],
       status: Number(addFormData.stock) === 0 ? 'out_of_stock' : 'active',
       isApproved: true,
     };
@@ -149,6 +203,7 @@ export default function InventoryPage() {
           stock: '',
           lowStockThreshold: '10',
           description: '',
+          imageUrl: '',
         });
       } else {
         showToast(res.message || 'Failed to create product', 'error');
@@ -162,6 +217,7 @@ export default function InventoryPage() {
 
   // Open Edit Modal
   const openEditModal = (item) => {
+    const existingImg = (item.images && item.images[0]?.url) || item.imageUrl || '';
     setEditingItem(item);
     setEditFormData({
       name: item.name || '',
@@ -173,6 +229,7 @@ export default function InventoryPage() {
       lowStockThreshold: item.lowStockThreshold || 10,
       status: item.status || 'active',
       description: item.description || '',
+      imageUrl: existingImg,
     });
     setIsEditModalOpen(true);
   };
@@ -193,6 +250,8 @@ export default function InventoryPage() {
       lowStockThreshold: Number(editFormData.lowStockThreshold || 10),
       status: Number(editFormData.stock) === 0 ? 'out_of_stock' : editFormData.status,
       description: editFormData.description,
+      imageUrl: editFormData.imageUrl,
+      images: editFormData.imageUrl ? [{ url: editFormData.imageUrl, isPrimary: true, altText: editFormData.name }] : [],
     };
 
     try {
@@ -592,7 +651,9 @@ export default function InventoryPage() {
                         <div className="flex items-center space-x-3">
                           <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700/60 flex items-center justify-center text-lg shrink-0 overflow-hidden">
                             {item.images && item.images[0]?.url ? (
-                              <img src={item.images[0].url} alt={item.name} className="w-full h-full object-cover" />
+                              <img src={getImageUrl(item.images[0].url)} alt={item.name} className="w-full h-full object-cover" />
+                            ) : item.imageUrl ? (
+                              <img src={getImageUrl(item.imageUrl)} alt={item.name} className="w-full h-full object-cover" />
                             ) : (
                               <span>📦</span>
                             )}
@@ -741,7 +802,12 @@ export default function InventoryPage() {
 
       {/* Add Product Modal */}
       {isAddModalOpen && (
-        <div className="modal-overlay">
+        <div
+          className="modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsAddModalOpen(false);
+          }}
+        >
           <div className="modal-box">
             <div className="flex justify-between items-center mb-6">
               <div>
@@ -848,6 +914,90 @@ export default function InventoryPage() {
                 />
               </div>
 
+              {/* Product Image Section */}
+              <div className="space-y-3 p-3.5 rounded-2xl bg-slate-800/40 border border-slate-700/60">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                    <span>🖼️ Product Image</span>
+                  </label>
+                  <span className="text-[10px] text-slate-400">Upload file or paste URL</span>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  {/* Thumbnail Preview */}
+                  <div className="w-16 h-16 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center shrink-0 overflow-hidden relative group">
+                    {addFormData.imageUrl ? (
+                      <>
+                        <img
+                          src={getImageUrl(addFormData.imageUrl)}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            if (e.currentTarget.nextSibling) {
+                              e.currentTarget.nextSibling.style.display = 'flex';
+                            }
+                          }}
+                        />
+                        <div style={{ display: 'none' }} className="w-full h-full items-center justify-center text-[10px] text-slate-500 font-medium text-center p-1">
+                          No Preview
+                        </div>
+                      </>
+                    ) : (
+                      <span className="text-xl text-slate-600">📷</span>
+                    )}
+                  </div>
+
+                  {/* Upload Controls & URL */}
+                  <div className="flex-1 space-y-2 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <label className={`px-3 py-1.5 rounded-xl border text-xs font-semibold cursor-pointer transition flex items-center gap-2 ${
+                        uploadingImage === 'add'
+                          ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-300 cursor-wait'
+                          : 'bg-indigo-600 hover:bg-indigo-500 border-indigo-500 text-white shadow-md shadow-indigo-600/20'
+                      }`}>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleFileUpload(e, 'add')}
+                          disabled={uploadingImage === 'add'}
+                        />
+                        {uploadingImage === 'add' ? (
+                          <>
+                            <div className="w-3 h-3 border-2 border-indigo-300 border-t-transparent rounded-full animate-spin"></div>
+                            <span>Uploading File...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>⬆️ Upload File</span>
+                          </>
+                        )}
+                      </label>
+                      {addFormData.imageUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setAddFormData({ ...addFormData, imageUrl: '' })}
+                          className="px-2.5 py-1.5 rounded-xl border border-slate-700 hover:border-red-500/40 text-slate-400 hover:text-red-400 text-xs transition font-medium"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+
+                    <div>
+                      <input
+                        type="text"
+                        value={addFormData.imageUrl}
+                        onChange={(e) => setAddFormData({ ...addFormData, imageUrl: e.target.value })}
+                        placeholder="Or paste image URL (https://...)"
+                        className="form-input text-xs py-1.5 w-full font-mono text-[11px]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">Product Description</label>
                 <textarea
@@ -882,7 +1032,15 @@ export default function InventoryPage() {
 
       {/* Edit Product Modal */}
       {isEditModalOpen && editingItem && (
-        <div className="modal-overlay">
+        <div
+          className="modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsEditModalOpen(false);
+              setEditingItem(null);
+            }
+          }}
+        >
           <div className="modal-box">
             <div className="flex justify-between items-center mb-6">
               <div>
@@ -999,6 +1157,90 @@ export default function InventoryPage() {
                 </div>
               </div>
 
+              {/* Product Image Section */}
+              <div className="space-y-3 p-3.5 rounded-2xl bg-slate-800/40 border border-slate-700/60">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                    <span>🖼️ Product Image</span>
+                  </label>
+                  <span className="text-[10px] text-slate-400">Upload file or paste URL</span>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  {/* Thumbnail Preview */}
+                  <div className="w-16 h-16 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center shrink-0 overflow-hidden relative group">
+                    {editFormData.imageUrl ? (
+                      <>
+                        <img
+                          src={getImageUrl(editFormData.imageUrl)}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            if (e.currentTarget.nextSibling) {
+                              e.currentTarget.nextSibling.style.display = 'flex';
+                            }
+                          }}
+                        />
+                        <div style={{ display: 'none' }} className="w-full h-full items-center justify-center text-[10px] text-slate-500 font-medium text-center p-1">
+                          No Preview
+                        </div>
+                      </>
+                    ) : (
+                      <span className="text-xl text-slate-600">📷</span>
+                    )}
+                  </div>
+
+                  {/* Upload Controls & URL */}
+                  <div className="flex-1 space-y-2 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <label className={`px-3 py-1.5 rounded-xl border text-xs font-semibold cursor-pointer transition flex items-center gap-2 ${
+                        uploadingImage === 'edit'
+                          ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-300 cursor-wait'
+                          : 'bg-indigo-600 hover:bg-indigo-500 border-indigo-500 text-white shadow-md shadow-indigo-600/20'
+                      }`}>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleFileUpload(e, 'edit')}
+                          disabled={uploadingImage === 'edit'}
+                        />
+                        {uploadingImage === 'edit' ? (
+                          <>
+                            <div className="w-3 h-3 border-2 border-indigo-300 border-t-transparent rounded-full animate-spin"></div>
+                            <span>Uploading File...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>⬆️ Upload File</span>
+                          </>
+                        )}
+                      </label>
+                      {editFormData.imageUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setEditFormData({ ...editFormData, imageUrl: '' })}
+                          className="px-2.5 py-1.5 rounded-xl border border-slate-700 hover:border-red-500/40 text-slate-400 hover:text-red-400 text-xs transition font-medium"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+
+                    <div>
+                      <input
+                        type="text"
+                        value={editFormData.imageUrl}
+                        onChange={(e) => setEditFormData({ ...editFormData, imageUrl: e.target.value })}
+                        placeholder="Or paste image URL (https://...)"
+                        className="form-input text-xs py-1.5 w-full font-mono text-[11px]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">Description</label>
                 <textarea
@@ -1035,7 +1277,12 @@ export default function InventoryPage() {
 
       {/* Delete Confirmation Modal */}
       {deleteTarget && (
-        <div className="modal-overlay">
+        <div
+          className="modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setDeleteTarget(null);
+          }}
+        >
           <div className="modal-box max-w-md">
             <div className="text-center p-2">
               <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center text-2xl mx-auto mb-4">

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { productService } from '@/lib/api';
+import { productService, getImageUrl } from '@/lib/api';
 
 export default function MarketplacePage() {
   const [products, setProducts] = useState([]);
@@ -52,6 +52,16 @@ export default function MarketplacePage() {
   useEffect(() => {
     loadProducts();
   }, [selectedCategory]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -197,7 +207,7 @@ export default function MarketplacePage() {
                   <div className="h-48 bg-slate-950 relative overflow-hidden">
                     {product.images && product.images[0]?.url ? (
                       <img
-                        src={product.images[0].url}
+                        src={getImageUrl(product.images[0].url)}
                         alt={product.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                       />
@@ -273,8 +283,13 @@ export default function MarketplacePage() {
 
       {/* Add Product Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl relative">
+        <div
+          className="modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsModalOpen(false);
+          }}
+        >
+          <div className="modal-box max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold text-white">Add New Supplier Product</h3>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white">✕</button>

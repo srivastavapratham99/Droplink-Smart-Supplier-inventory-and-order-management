@@ -70,6 +70,17 @@ export default function AdminPage() {
     }
   }, [isAdmin, filterRole]);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsCreateAdminOpen(false);
+        setCreateAdminMsg('');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleToggleVerification = async (id, currentVal) => {
     setActionLoading(`verify-${id}`);
     const newVal = !currentVal;
@@ -481,7 +492,15 @@ export default function AdminPage() {
 
       {/* Add Admin Account Modal */}
       {isCreateAdminOpen && (
-        <div className="modal-overlay">
+        <div
+          className="modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsCreateAdminOpen(false);
+              setCreateAdminMsg('');
+            }
+          }}
+        >
           <div className="modal-box">
             <div className="flex justify-between items-center mb-6">
               <div>

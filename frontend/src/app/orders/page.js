@@ -18,6 +18,16 @@ export default function OrdersPage() {
     }
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setSelectedOrder(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleUpdateStatus = (id, newStatus, tracking = '') => {
     setOrders((prev) => {
       const updated = prev.map((ord) => {
@@ -219,7 +229,12 @@ export default function OrdersPage() {
 
       {/* Fulfillment Modal */}
       {selectedOrder && (
-        <div className="modal-overlay">
+        <div
+          className="modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedOrder(null);
+          }}
+        >
           <div className="modal-box">
             <div className="flex justify-between items-start mb-5">
               <div>
