@@ -266,7 +266,6 @@ productSchema.virtual('profitMargin').get(function () {
 });
 
 // Indexes
-productSchema.index({ slug: 1 });
 productSchema.index({ supplier: 1 });
 productSchema.index({ category: 1, subcategory: 1 });
 productSchema.index({ status: 1, isApproved: 1 });
@@ -274,7 +273,7 @@ productSchema.index({ tags: 1 });
 productSchema.index({ name: 'text', description: 'text', tags: 'text' });
 
 // Auto slug pre-save
-productSchema.pre('save', function (next) {
+productSchema.pre('save', function () {
   if (this.isModified('name') && !this.slug) {
     this.slug =
       this.name
@@ -284,7 +283,6 @@ productSchema.pre('save', function (next) {
       '-' +
       Date.now();
   }
-  next();
 });
 
 const Product = mongoose.models.Product || mongoose.model('Product', productSchema);

@@ -4,33 +4,6 @@ import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { productService } from '@/lib/api';
 
-const MOCK_PRODUCT = {
-  _id: '1',
-  name: 'Wireless Noise-Canceling Earbuds Pro',
-  slug: 'wireless-noise-canceling-earbuds-pro',
-  category: 'Electronics',
-  subcategory: 'Audio',
-  brand: 'SoundPulse',
-  basePrice: 2499,
-  compareAtPrice: 3999,
-  costPrice: 1200,
-  stock: 45,
-  lowStockThreshold: 10,
-  sku: 'EAR-PRO-01',
-  status: 'active',
-  isApproved: true,
-  description:
-    'High-fidelity active noise-canceling wireless earbuds engineered for crystal-clear sound, deep bass, and 30-hour battery life with fast-charging case. Perfect for dropshipping to tech enthusiasts.',
-  supplier: { name: 'Apex Tech', companyName: 'Apex Electronics Supplies', rating: 4.9 },
-  images: [
-    { url: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=800&auto=format&fit=crop&q=80' },
-    { url: 'https://images.unsplash.com/photo-1572536147248-ac59a8abfa4b?w=800&auto=format&fit=crop&q=80' },
-  ],
-  shippingClass: 'express',
-  freeShipping: true,
-  weight: 250,
-};
-
 export default function ProductDetailPage({ params }) {
   const resolvedParams = use(params);
   const productId = resolvedParams.id;
@@ -47,10 +20,10 @@ export default function ProductDetailPage({ params }) {
         if (res.success && res.data) {
           setProduct(res.data);
         } else {
-          setProduct(MOCK_PRODUCT);
+          setProduct(null);
         }
       } catch (err) {
-        setProduct(MOCK_PRODUCT);
+        setProduct(null);
       } finally {
         setLoading(false);
       }

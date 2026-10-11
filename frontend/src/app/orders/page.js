@@ -1,63 +1,26 @@
 'use client';
 
-import { useState } from 'react';
-
-const INITIAL_ORDERS = [
-  {
-    id: 'ORD-8921',
-    customerName: 'Aarav Sharma',
-    retailerStore: 'UrbanTech Store (Shopify)',
-    items: [{ name: 'Wireless Noise-Canceling Earbuds Pro', qty: 2, price: 2499 }],
-    totalAmount: 4998,
-    shippingAddress: '42 MG Road, Indiranagar, Bengaluru, KA',
-    status: 'Pending',
-    date: '2026-10-07 14:30',
-    trackingNumber: '',
-  },
-  {
-    id: 'ORD-8920',
-    customerName: 'Priya Verma',
-    retailerStore: 'Nordic Home Living',
-    items: [{ name: 'Ergonomic Mesh Office Chair', qty: 1, price: 8999 }],
-    totalAmount: 8999,
-    shippingAddress: '15 Park Street, Flat 3B, Kolkata, WB',
-    status: 'Processing',
-    date: '2026-10-07 11:15',
-    trackingNumber: 'DTDC-8819230',
-  },
-  {
-    id: 'ORD-8919',
-    customerName: 'Rohan Gupta',
-    retailerStore: 'FitPulse Direct',
-    items: [{ name: 'Smart Fitness Tracker Watch', qty: 3, price: 1999 }],
-    totalAmount: 5997,
-    shippingAddress: '88 Cyber City, Sector 24, Gurugram, HR',
-    status: 'Shipped',
-    date: '2026-10-06 18:45',
-    trackingNumber: 'BLUEDART-9921041',
-  },
-  {
-    id: 'ORD-8918',
-    customerName: 'Sneha Patel',
-    retailerStore: 'EcoVibe Essentials',
-    items: [{ name: 'Stainless Steel Insulated Water Bottle', qty: 5, price: 799 }],
-    totalAmount: 3995,
-    shippingAddress: '23 CG Road, Navrangpura, Ahmedabad, GJ',
-    status: 'Delivered',
-    date: '2026-10-05 09:20',
-    trackingNumber: 'DELHIVERY-7721839',
-  },
-];
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
 
 export default function OrdersPage() {
-  const [orders, setOrders] = useState(INITIAL_ORDERS);
+  const { user, isAuthenticated, loginAsDemo } = useAuth();
+  const [orders, setOrders] = useState([]);
   const [filterStatus, setFilterStatus] = useState('All');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [trackingInput, setTrackingInput] = useState('');
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedOrders = JSON.parse(localStorage.getItem('droplink_orders') || '[]');
+      setOrders(savedOrders);
+    }
+  }, []);
+
   const handleUpdateStatus = (id, newStatus, tracking = '') => {
-    setOrders((prev) =>
-      prev.map((ord) => {
+    setOrders((prev) => {
+      const updated = prev.map((ord) => {
         if (ord.id === id) {
           return {
             ...ord,
@@ -66,8 +29,12 @@ export default function OrdersPage() {
           };
         }
         return ord;
-      })
-    );
+      });
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('droplink_orders', JSON.stringify(updated));
+      }
+      return updated;
+    });
     setSelectedOrder(null);
     setTrackingInput('');
   };
@@ -80,6 +47,33 @@ export default function OrdersPage() {
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      {/* Auth Notice */}
+      {!isAuthenticated && (
+        <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center space-x-3">
+            <span className="text-xl">🔒</span>
+            <div>
+              <p className="text-xs font-bold">You are currently signed out</p>
+              <p className="text-[11px] text-amber-300/80">Sign in to track live customer orders and update dispatch tracking.</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => loginAsDemo('supplier')}
+              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition"
+            >
+              Demo Login
+            </button>
+            <Link
+              href="/login"
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-xl transition"
+            >
+              Sign In
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Page Header - consistent with all pages */}
       <div className="page-header-card">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">

@@ -39,37 +39,48 @@ export const DEMO_PROFILES = {
 };
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(DEMO_PROFILES.supplier);
+  // Start with null so we don't assume any role until checking localStorage
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function initAuth() {
       if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('droplink_token');
         const stored = localStorage.getItem('droplink_user_profile');
+        const token = localStorage.getItem('droplink_token');
+        const hasExplicitlyLoggedOut = localStorage.getItem('droplink_logged_out') === 'true';
 
-        if (stored) {
+        if (stored && !hasExplicitlyLoggedOut) {
           try {
-            setUser(JSON.parse(stored));
+            const parsed = JSON.parse(stored);
+            setUser(parsed);
+
+            // Try validating with backend if it's a real JWT token
+            if (token && !token.startsWith('demo-token-')) {
+              try {
+                const res = await authService.getProfile();
+                if (res.success && res.user) {
+                  const fullUser = { ...res.user, token };
+                  setUser(fullUser);
+                  localStorage.setItem('droplink_user_profile', JSON.stringify(fullUser));
+                }
+              } catch (err) {
+                // Token invalid or backend offline, keep parsed profile
+              }
+            }
           } catch (e) {
-            setUser(DEMO_PROFILES.supplier);
+            setUser(null);
+            localStorage.removeItem('droplink_user_profile');
+            localStorage.removeItem('droplink_token');
           }
         } else {
-          localStorage.setItem('droplink_user_profile', JSON.stringify(DEMO_PROFILES.supplier));
-          localStorage.setItem('droplink_token', DEMO_PROFILES.supplier.token);
-        }
-
-        // Try verifying profile with backend if non-demo token
-        if (token && !token.startsWith('demo-token-')) {
-          try {
-            const res = await authService.getProfile();
-            if (res.success && res.user) {
-              const fullUser = { ...res.user, token };
-              setUser(fullUser);
-              localStorage.setItem('droplink_user_profile', JSON.stringify(fullUser));
-            }
-          } catch (err) {
-            // Token expired or server unreachable, fallback to stored demo
+          // If no profile found and never logged out before, default to demo supplier for initial first-time preview
+          if (!hasExplicitlyLoggedOut) {
+            setUser(DEMO_PROFILES.supplier);
+            localStorage.setItem('droplink_user_profile', JSON.stringify(DEMO_PROFILES.supplier));
+            localStorage.setItem('droplink_token', DEMO_PROFILES.supplier.token);
+          } else {
+            setUser(null);
           }
         }
       }
@@ -83,6 +94,7 @@ export function AuthProvider({ children }) {
     const profile = DEMO_PROFILES[roleKey] || DEMO_PROFILES.supplier;
     setUser(profile);
     if (typeof window !== 'undefined') {
+      localStorage.removeItem('droplink_logged_out');
       localStorage.setItem('droplink_user_profile', JSON.stringify(profile));
       localStorage.setItem('droplink_token', profile.token);
     }
@@ -95,18 +107,43 @@ export function AuthProvider({ children }) {
       if (res.success && res.user) {
         const fullUser = { ...res.user, token: res.token };
         setUser(fullUser);
-        localStorage.setItem('droplink_user_profile', JSON.stringify(fullUser));
-        localStorage.setItem('droplink_token', res.token);
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('droplink_logged_out');
+          localStorage.setItem('droplink_user_profile', JSON.stringify(fullUser));
+          localStorage.setItem('droplink_token', res.token);
+        }
         return { success: true, user: fullUser };
       }
     } catch (err) {
-      // Fallback matching for demo profiles if backend is unreachable
-      const lower = email.toLowerCase();
-      if (lower.includes('admin')) return { success: true, user: loginAsDemo('admin') };
-      if (lower.includes('supplier')) return { success: true, user: loginAsDemo('supplier') };
-      if (lower.includes('user') || lower.includes('retailer')) return { success: true, user: loginAsDemo('user') };
+      // Check if user previously registered this email locally
+      if (typeof window !== 'undefined') {
+        const localAccounts = JSON.parse(localStorage.getItem('droplink_registered_accounts') || '[]');
+        const found = localAccounts.find((a) => a.email.toLowerCase() === email.toLowerCase());
+        if (found) {
+          if (!found.password || found.password === password) {
+            setUser(found);
+            localStorage.removeItem('droplink_logged_out');
+            localStorage.setItem('droplink_user_profile', JSON.stringify(found));
+            localStorage.setItem('droplink_token', found.token);
+            return { success: true, user: found };
+          } else {
+            return { success: false, message: 'Invalid password. Please check your credentials.' };
+          }
+        }
+      }
 
-      return { success: false, message: err.message || 'Invalid credentials' };
+      // Check predefined demo accounts
+      const lower = email.toLowerCase();
+      if (lower === 'admin@droplink.com') return { success: true, user: loginAsDemo('admin') };
+      if (lower === 'supplier@apex.com') return { success: true, user: loginAsDemo('supplier') };
+      if (lower === 'user@trendstore.com') return { success: true, user: loginAsDemo('user') };
+
+      // Clean, user-friendly error message
+      const displayMsg = err.message && !err.message.includes('matchPassword')
+        ? err.message
+        : 'No account found with this email. Please click "Create New Account" to register first.';
+
+      return { success: false, message: displayMsg };
     }
   };
 
@@ -116,8 +153,14 @@ export function AuthProvider({ children }) {
       if (res.success && res.user) {
         const fullUser = { ...res.user, token: res.token };
         setUser(fullUser);
-        localStorage.setItem('droplink_user_profile', JSON.stringify(fullUser));
-        localStorage.setItem('droplink_token', res.token);
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('droplink_logged_out');
+          localStorage.setItem('droplink_user_profile', JSON.stringify(fullUser));
+          localStorage.setItem('droplink_token', res.token);
+          const existing = JSON.parse(localStorage.getItem('droplink_registered_accounts') || '[]');
+          existing.push({ ...fullUser, password: userData.password });
+          localStorage.setItem('droplink_registered_accounts', JSON.stringify(existing));
+        }
         return { success: true, user: fullUser };
       }
     } catch (err) {
@@ -126,6 +169,7 @@ export function AuthProvider({ children }) {
         _id: 'custom-' + Date.now(),
         name: userData.name,
         email: userData.email,
+        password: userData.password,
         role: role === 'retailer' ? 'user' : role,
         companyName: userData.companyName || `${userData.name} Co.`,
         storeName: userData.storeName || `${userData.name} Store`,
@@ -133,8 +177,14 @@ export function AuthProvider({ children }) {
         token: 'custom-jwt-' + Date.now(),
       };
       setUser(demoAccount);
-      localStorage.setItem('droplink_user_profile', JSON.stringify(demoAccount));
-      localStorage.setItem('droplink_token', demoAccount.token);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('droplink_logged_out');
+        localStorage.setItem('droplink_user_profile', JSON.stringify(demoAccount));
+        localStorage.setItem('droplink_token', demoAccount.token);
+        const existing = JSON.parse(localStorage.getItem('droplink_registered_accounts') || '[]');
+        existing.push(demoAccount);
+        localStorage.setItem('droplink_registered_accounts', JSON.stringify(existing));
+      }
       return { success: true, user: demoAccount };
     }
   };
@@ -142,23 +192,26 @@ export function AuthProvider({ children }) {
   const logout = () => {
     setUser(null);
     if (typeof window !== 'undefined') {
+      localStorage.setItem('droplink_logged_out', 'true');
       localStorage.removeItem('droplink_user_profile');
       localStorage.removeItem('droplink_token');
     }
   };
 
-  const isSupplier = user?.role === 'supplier';
-  const isAdmin = user?.role === 'admin';
-  const isUser = user?.role === 'user' || user?.role === 'retailer';
+  const isSupplier = !!user && user.role === 'supplier';
+  const isAdmin = !!user && user.role === 'admin';
+  const isUser = !!user && (user.role === 'user' || user.role === 'retailer');
+  const isAuthenticated = !!user;
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        role: user?.role || 'user',
+        role: user ? (user.role === 'retailer' ? 'user' : user.role) : 'guest',
         isSupplier,
         isAdmin,
         isUser,
+        isAuthenticated,
         loading,
         login,
         register,

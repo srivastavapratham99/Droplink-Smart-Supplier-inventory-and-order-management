@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 
 export default function Home() {
-  const { isSupplier, isAdmin, isUser, loginAsDemo } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState('suppliers');
 
   return (
@@ -293,34 +293,34 @@ export default function Home() {
         </div>
       </section>
 
-      {/* QUICK DEMO PREVIEW BANNER */}
+      {/* ROLE PORTALS ACCESS SECTION */}
       <section className="py-16 bg-slate-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="content-card p-8 bg-gradient-to-r from-indigo-950/60 via-slate-900 to-purple-950/60 border border-indigo-500/20 text-center relative overflow-hidden">
-            <h3 className="text-2xl font-black text-white">Experience Droplink Accounts Live</h3>
+            <h3 className="text-2xl font-black text-white">Access Your Droplink Portal</h3>
             <p className="text-xs text-slate-300 mt-2 max-w-xl mx-auto">
-              Test instant 1-click logins for Supplier, Retailer, and Admin portals right now.
+              Sign in with your registered account credentials to access your dedicated role portal.
             </p>
 
             <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <button
-                onClick={() => loginAsDemo('supplier')}
+              <Link
+                href="/login"
                 className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition shadow"
               >
-                Launch Demo Supplier Portal
-              </button>
-              <button
-                onClick={() => loginAsDemo('user')}
+                Sign In to Supplier Portal
+              </Link>
+              <Link
+                href="/login"
                 className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow"
               >
-                Launch Demo Retailer Store
-              </button>
-              <button
-                onClick={() => loginAsDemo('admin')}
+                Sign In to Retailer Hub
+              </Link>
+              <Link
+                href="/login"
                 className="px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl transition shadow"
               >
-                Launch Demo Admin Center
-              </button>
+                Administrator Access
+              </Link>
             </div>
           </div>
         </div>

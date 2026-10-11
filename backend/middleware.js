@@ -19,19 +19,39 @@ const protect = async (req, res, next) => {
     return res.status(401).json({ success: false, message: 'Not authorized: No token provided' });
   }
 
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-
-    // If token is a demo token, attach mock user object directly
-    if (token.startsWith('demo-token-')) {
+  // If token is a demo token, resolve to user directly
+  if (token.startsWith('demo-token-')) {
+    const role = token.includes('admin') ? 'admin' : token.includes('supplier') ? 'supplier' : 'user';
+    const email = role === 'admin' ? 'admin@droplink.com' : role === 'supplier' ? 'supplier@apex.com' : 'user@trendstore.com';
+    try {
+      let demoUser = await User.findOne({ email });
+      if (!demoUser) {
+        demoUser = await User.create({
+          name: role === 'admin' ? 'Predefined Admin' : role === 'supplier' ? 'Apex Wholesale Ltd.' : 'TrendStore Retail Hub',
+          email,
+          password: 'password123',
+          role,
+          companyName: role === 'supplier' ? 'Apex Wholesale Ltd.' : 'Droplink HQ Operations',
+          isVerifiedSupplier: role === 'supplier',
+          status: 'active',
+        });
+      }
+      req.user = demoUser;
+      return next();
+    } catch (e) {
       req.user = {
-        id: decoded.id || 'demo-user-id',
-        email: decoded.email,
-        role: decoded.role || 'user',
-        name: decoded.name || 'Demo User',
+        _id: '6acb3a8b36d2cc715ef11fce',
+        id: '6acb3a8b36d2cc715ef11fce',
+        email,
+        role,
+        name: `Demo ${role.toUpperCase()}`,
       };
       return next();
     }
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
 
     // Try finding fresh user in DB if real token
     let user = null;

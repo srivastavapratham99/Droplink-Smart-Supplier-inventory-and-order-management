@@ -139,8 +139,15 @@ router.post('/login', async (req, res) => {
       }
     }
 
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'No account found with this email. Please create an account first.',
+      });
+    }
+
     const isMatch = await user.matchPassword(password);
-    if (!user || !isMatch) {
+    if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 

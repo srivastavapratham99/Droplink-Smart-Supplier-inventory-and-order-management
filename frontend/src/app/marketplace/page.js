@@ -4,74 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { productService } from '@/lib/api';
 
-// Demo fallback data if backend server is offline
-const DEMO_PRODUCTS = [
-  {
-    _id: '1',
-    name: 'Wireless Noise-Canceling Earbuds Pro',
-    slug: 'wireless-noise-canceling-earbuds-pro',
-    category: 'Electronics',
-    basePrice: 2499,
-    compareAtPrice: 3999,
-    costPrice: 1200,
-    stock: 45,
-    lowStockThreshold: 10,
-    status: 'active',
-    isApproved: true,
-    supplier: { companyName: 'Apex Electronics Supplies' },
-    images: [{ url: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=500&auto=format&fit=crop&q=60' }],
-    rating: { average: 4.8, count: 124 },
-  },
-  {
-    _id: '2',
-    name: 'Ergonomic Mesh Office Chair',
-    slug: 'ergonomic-mesh-office-chair',
-    category: 'Furniture',
-    basePrice: 8999,
-    compareAtPrice: 12999,
-    costPrice: 4500,
-    stock: 8,
-    lowStockThreshold: 10,
-    status: 'active',
-    isApproved: true,
-    supplier: { companyName: 'Comfort Living Co.' },
-    images: [{ url: 'https://images.unsplash.com/photo-1580481072645-022f9a6d1270?w=500&auto=format&fit=crop&q=60' }],
-    rating: { average: 4.6, count: 89 },
-  },
-  {
-    _id: '3',
-    name: 'Smart Fitness Tracker Watch',
-    slug: 'smart-fitness-tracker-watch',
-    category: 'Wearables',
-    basePrice: 1999,
-    compareAtPrice: 2999,
-    costPrice: 850,
-    stock: 0,
-    lowStockThreshold: 5,
-    status: 'out_of_stock',
-    isApproved: true,
-    supplier: { companyName: 'PulseTech Wearables' },
-    images: [{ url: 'https://images.unsplash.com/photo-1575311373937-040b8e1fd5b6?w=500&auto=format&fit=crop&q=60' }],
-    rating: { average: 4.4, count: 210 },
-  },
-  {
-    _id: '4',
-    name: 'Stainless Steel Insulated Water Bottle (1L)',
-    slug: 'stainless-steel-water-bottle',
-    category: 'Lifestyle',
-    basePrice: 799,
-    compareAtPrice: 1199,
-    costPrice: 300,
-    stock: 120,
-    lowStockThreshold: 15,
-    status: 'active',
-    isApproved: true,
-    supplier: { companyName: 'EcoVibe Dropship' },
-    images: [{ url: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=500&auto=format&fit=crop&q=60' }],
-    rating: { average: 4.9, count: 350 },
-  },
-];
-
 export default function MarketplacePage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -93,7 +25,7 @@ export default function MarketplacePage() {
 
   const categories = ['All', 'Electronics', 'Furniture', 'Wearables', 'Lifestyle', 'Fashion'];
 
-  // Fetch products from backend or fallback to demo
+  // Fetch products from database
   const loadProducts = async () => {
     setLoading(true);
     try {
@@ -106,23 +38,15 @@ export default function MarketplacePage() {
         setProducts(res.data);
         setIsBackendConnected(true);
       } else {
-        setProducts(filterDemoProducts());
+        setProducts([]);
         setIsBackendConnected(false);
       }
     } catch (err) {
-      setProducts(filterDemoProducts());
+      setProducts([]);
       setIsBackendConnected(false);
     } finally {
       setLoading(false);
     }
-  };
-
-  const filterDemoProducts = () => {
-    return DEMO_PRODUCTS.filter((p) => {
-      const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
-      const matchesCategory = !selectedCategory || selectedCategory === 'All' || p.category === selectedCategory;
-      return matchesSearch && matchesCategory;
-    });
   };
 
   useEffect(() => {
