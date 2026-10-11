@@ -232,24 +232,6 @@ export default function InventoryPage() {
     }
   };
 
-  // Seed sample products
-  const handleSeedCatalog = async () => {
-    setActionLoading('seed');
-    try {
-      const res = await fetch('http://localhost:5000/api/products/seed', { method: 'POST' });
-      const data = await res.json();
-      if (data.success) {
-        showToast('Sample supplier catalog loaded successfully!');
-        loadData();
-      } else {
-        loadData();
-      }
-    } catch (err) {
-      loadData();
-    } finally {
-      setActionLoading(null);
-    }
-  };
 
   // Filtering
   const filteredItems = items.filter((item) => {
@@ -355,13 +337,13 @@ export default function InventoryPage() {
 
           <div className="flex items-center gap-3 shrink-0 flex-wrap">
             <button
-              onClick={handleSeedCatalog}
-              disabled={actionLoading === 'seed'}
+              onClick={loadData}
+              disabled={loading}
               className="btn-secondary text-xs flex items-center space-x-1.5"
-              title="Reset or refresh catalog items"
+              title="Refresh inventory from database"
             >
               <span>🔄</span>
-              <span>{actionLoading === 'seed' ? 'Refreshing...' : 'Reload Catalog'}</span>
+              <span>{loading ? 'Refreshing...' : 'Refresh Data'}</span>
             </button>
             <button
               onClick={() => setIsAddModalOpen(true)}
