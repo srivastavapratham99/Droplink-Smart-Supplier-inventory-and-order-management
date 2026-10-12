@@ -7,8 +7,10 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/a
 export const getImageUrl = (url) => {
   if (!url) return '';
   if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;
-  const backendBase = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace('/api', '');
-  return `${backendBase}${url.startsWith('/') ? '' : '/'}${url}`;
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+  const backendBase = apiBase.replace(/\/api\/?$/, '').replace(/\/+$/, '');
+  const cleanPath = url.replace(/^\/+/, '');
+  return `${backendBase}/${cleanPath}`;
 };
 
 /**

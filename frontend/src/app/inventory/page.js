@@ -164,7 +164,9 @@ export default function InventoryPage() {
       showToast(err.message || 'Image upload failed', 'error');
     } finally {
       setUploadingImage(false);
-      e.target.value = '';
+      if (e?.target) {
+        e.target.value = '';
+      }
     }
   };
 
@@ -925,7 +927,11 @@ export default function InventoryPage() {
 
                 <div className="flex items-start gap-3">
                   {/* Thumbnail Preview */}
-                  <div className="w-16 h-16 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center shrink-0 overflow-hidden relative group">
+                  <label
+                    htmlFor="add-product-image-upload"
+                    className="w-16 h-16 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center shrink-0 overflow-hidden relative group cursor-pointer hover:border-indigo-500 transition"
+                    title="Click to select image file"
+                  >
                     {addFormData.imageUrl ? (
                       <>
                         <img
@@ -944,19 +950,26 @@ export default function InventoryPage() {
                         </div>
                       </>
                     ) : (
-                      <span className="text-xl text-slate-600">📷</span>
+                      <div className="flex flex-col items-center justify-center text-slate-500 group-hover:text-indigo-400 transition">
+                        <span className="text-xl">📷</span>
+                        <span className="text-[9px] mt-0.5 font-medium">Browse</span>
+                      </div>
                     )}
-                  </div>
+                  </label>
 
                   {/* Upload Controls & URL */}
                   <div className="flex-1 space-y-2 min-w-0">
                     <div className="flex items-center gap-2">
-                      <label className={`px-3 py-1.5 rounded-xl border text-xs font-semibold cursor-pointer transition flex items-center gap-2 ${
-                        uploadingImage === 'add'
-                          ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-300 cursor-wait'
-                          : 'bg-indigo-600 hover:bg-indigo-500 border-indigo-500 text-white shadow-md shadow-indigo-600/20'
-                      }`}>
+                      <label
+                        htmlFor="add-product-image-upload"
+                        className={`px-3 py-1.5 rounded-xl border text-xs font-semibold cursor-pointer transition flex items-center gap-2 ${
+                          uploadingImage === 'add'
+                            ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-300 cursor-wait'
+                            : 'bg-indigo-600 hover:bg-indigo-500 border-indigo-500 text-white shadow-md shadow-indigo-600/20'
+                        }`}
+                      >
                         <input
+                          id="add-product-image-upload"
                           type="file"
                           accept="image/*"
                           className="hidden"
@@ -1168,7 +1181,11 @@ export default function InventoryPage() {
 
                 <div className="flex items-start gap-3">
                   {/* Thumbnail Preview */}
-                  <div className="w-16 h-16 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center shrink-0 overflow-hidden relative group">
+                  <label
+                    htmlFor="edit-product-image-upload"
+                    className="w-16 h-16 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center shrink-0 overflow-hidden relative group cursor-pointer hover:border-indigo-500 transition"
+                    title="Click to select image file"
+                  >
                     {editFormData.imageUrl ? (
                       <>
                         <img
@@ -1187,19 +1204,26 @@ export default function InventoryPage() {
                         </div>
                       </>
                     ) : (
-                      <span className="text-xl text-slate-600">📷</span>
+                      <div className="flex flex-col items-center justify-center text-slate-500 group-hover:text-indigo-400 transition">
+                        <span className="text-xl">📷</span>
+                        <span className="text-[9px] mt-0.5 font-medium">Browse</span>
+                      </div>
                     )}
-                  </div>
+                  </label>
 
                   {/* Upload Controls & URL */}
                   <div className="flex-1 space-y-2 min-w-0">
                     <div className="flex items-center gap-2">
-                      <label className={`px-3 py-1.5 rounded-xl border text-xs font-semibold cursor-pointer transition flex items-center gap-2 ${
-                        uploadingImage === 'edit'
-                          ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-300 cursor-wait'
-                          : 'bg-indigo-600 hover:bg-indigo-500 border-indigo-500 text-white shadow-md shadow-indigo-600/20'
-                      }`}>
+                      <label
+                        htmlFor="edit-product-image-upload"
+                        className={`px-3 py-1.5 rounded-xl border text-xs font-semibold cursor-pointer transition flex items-center gap-2 ${
+                          uploadingImage === 'edit'
+                            ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-300 cursor-wait'
+                            : 'bg-indigo-600 hover:bg-indigo-500 border-indigo-500 text-white shadow-md shadow-indigo-600/20'
+                        }`}
+                      >
                         <input
+                          id="edit-product-image-upload"
                           type="file"
                           accept="image/*"
                           className="hidden"

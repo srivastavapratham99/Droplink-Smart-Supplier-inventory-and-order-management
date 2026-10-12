@@ -170,6 +170,11 @@ const productSchema = new mongoose.Schema(
     },
 
     // ─── Media ───────────────────────────────────────────────────────────────
+    imageUrl: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     images: {
       type: [
         {
@@ -272,7 +277,7 @@ productSchema.index({ status: 1, isApproved: 1 });
 productSchema.index({ tags: 1 });
 productSchema.index({ name: 'text', description: 'text', tags: 'text' });
 
-// Auto slug pre-save
+// Auto slug and image sync pre-save
 productSchema.pre('save', function () {
   if (this.isModified('name') && !this.slug) {
     this.slug =
@@ -282,6 +287,13 @@ productSchema.pre('save', function () {
         .replace(/(^-|-$)/g, '') +
       '-' +
       Date.now();
+  }
+
+  // Ensure imageUrl and images are synchronized
+  if (this.images && this.images.length > 0 && this.images[0]?.url) {
+    this.imageUrl = this.images[0].url;
+  } else if (this.imageUrl && (!this.images || this.images.length === 0)) {
+    this.images = [{ url: this.imageUrl, isPrimary: true, altText: this.name || '' }];
   }
 });
 

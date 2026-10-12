@@ -44,8 +44,18 @@ const upload = multer({
  * @desc    Upload product image file
  * @access  Private (Supplier / Admin)
  */
-router.post('/upload-image', protect, supplierOrAdmin, upload.single('image'), (req, res) => {
-  try {
+router.post('/upload-image', protect, supplierOrAdmin, (req, res) => {
+  upload.single('image')(req, res, (err) => {
+    if (err) {
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ success: false, message: 'Image file size must be less than 10MB' });
+        }
+        return res.status(400).json({ success: false, message: err.message });
+      }
+      return res.status(400).json({ success: false, message: err.message });
+    }
+
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'Please select an image file to upload' });
     }
@@ -62,9 +72,7 @@ router.post('/upload-image', protect, supplierOrAdmin, upload.single('image'), (
       fullUrl,
       filename: req.file.filename,
     });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
+  });
 });
 
 /**
@@ -269,10 +277,13 @@ router.post('/', protect, supplierOrAdmin, async (req, res) => {
       formattedImages = [{ url: req.body.imageUrl.trim(), isPrimary: true, altText: req.body.name || '' }];
     }
 
+    const primaryImg = req.body.imageUrl?.trim() || formattedImages[0]?.url || '';
+
     const productData = {
       ...req.body,
       sku,
       supplier: supplierId, // Strictly binds product to this specific supplier
+      imageUrl: primaryImg,
       images: formattedImages.length > 0 ? formattedImages : req.body.images || [],
       isApproved: true,
       status: req.body.status || 'active',
@@ -324,8 +335,12 @@ router.put('/:id', protect, supplierOrAdmin, async (req, res) => {
           altText: img.altText || req.body.name || '',
         };
       });
+      if (!updateData.imageUrl) {
+        updateData.imageUrl = updateData.images[0]?.url || '';
+      }
     } else if (req.body.imageUrl && typeof req.body.imageUrl === 'string' && req.body.imageUrl.trim()) {
       updateData.images = [{ url: req.body.imageUrl.trim(), isPrimary: true, altText: req.body.name || '' }];
+      updateData.imageUrl = req.body.imageUrl.trim();
     }
 
     product = await Product.findByIdAndUpdate(req.params.id, updateData, {
